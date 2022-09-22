@@ -77,11 +77,19 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void CreatGameSession();
 
+	UFUNCTION(BlueprintCallable)
+	void JoinGameSession();
 
 	void OnCreateSessionComplete(FName SessionName,bool bWasSuccessful);
+	void OnFindSessionsComplete(bool bWasSuccessful);
+	void OnJoinSessionComplete(FName SessionName,EOnJoinSessionCompleteResult::Type Result);
 
 private:
 	//TSharedPtr<class FOnCreateSessionCompleteDelegate, ESPMode::ThreadSafe> CreateSessionCompleteDelegate;
 	FOnCreateSessionCompleteDelegate CreateSessionCompleteDelegate;
+	FOnFindSessionsCompleteDelegate FindSessionsCompleteDelegate;
+	FOnJoinSessionCompleteDelegate JoinSessionCompleteDelegate;
+
+	TSharedPtr<FOnlineSessionSearch> SessionSearch;
 };
 

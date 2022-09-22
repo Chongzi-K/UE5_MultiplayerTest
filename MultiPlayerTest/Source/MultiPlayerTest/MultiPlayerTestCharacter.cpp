@@ -16,7 +16,9 @@
 // AMultiPlayerTestCharacter
 
 AMultiPlayerTestCharacter::AMultiPlayerTestCharacter():
-	CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this,&AMultiPlayerTestCharacter::OnCreateSessionComplete))
+	CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this,&ThisClass::OnCreateSessionComplete)),
+	FindSessionsCompleteDelegate(FOnFindSessionsCompleteDelegate::CreateUObject(this,&ThisClass::OnFindSessionsComplete)),
+	JoinSessionCompleteDelegate(FOnJoinSessionCompleteDelegate::CreateUObject(this,&ThisClass::OnJoinSessionComplete))
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -66,9 +68,6 @@ AMultiPlayerTestCharacter::AMultiPlayerTestCharacter():
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////
-// Input
-
 void AMultiPlayerTestCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	// Set up gameplay key bindings
@@ -116,11 +115,28 @@ void AMultiPlayerTestCharacter::CreatGameSession()
 	SessionSettings->bShouldAdvertise = true;//通过steam公开
 	SessionSettings->bUsesPresence = true;//使用steam账户所在地区
 	SessionSettings->bUseLobbiesIfAvailable = true;
+	SessionSettings->Set(FName("MatchType"), FString("FreeForAll"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
 
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 	OnlineSessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, *SessionSettings);
 
+}
+
+void AMultiPlayerTestCharacter::JoinGameSession()
+{
+	if (!OnlineSessionInterface.IsValid()){ return; }
+	// find game session
+
+	OnlineSessionInterface->AddOnFindSessionsCompleteDelegate_Handle(FindSessionsCompleteDelegate);
+
+	SessionSearch = MakeShareable(new FOnlineSessionSearch());
+	SessionSearch->MaxSearchResults = 10000;//可以发现的最大结果数量
+	SessionSearch->bIsLanQuery = false;//不适用lan
+	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true,EOnlineComparisonOp::Equals);
+
+	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+	OnlineSessionInterface->FindSessions(*LocalPlayer->GetPreferredUniqueNetId(), SessionSearch.ToSharedRef());
 }
 
 void AMultiPlayerTestCharacter::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
@@ -131,6 +147,11 @@ void AMultiPlayerTestCharacter::OnCreateSessionComplete(FName SessionName, bool 
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Green, FString::Printf(TEXT("Success to create session %s"),*SessionName.ToString()));
 		}
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			World->ServerTravel(FString("Game/Map/Lobby?listen"));
+		}
 	}
 	else
 	{
@@ -139,6 +160,45 @@ void AMultiPlayerTestCharacter::OnCreateSessionComplete(FName SessionName, bool 
 			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, FString::Printf(TEXT("Fail to create session")));
 		}
 	}
+}
+
+void AMultiPlayerTestCharacter::OnFindSessionsComplete(bool bWasSuccessful)
+{
+	if (!OnlineSessionInterface.IsValid()) { return; }
+	for (auto Result : SessionSearch->SearchResults)
+	{
+		FString Id = Result.GetSessionIdStr();
+		FString UserName = Result.Session.OwningUserName;
+		FString MatchType;
+		Result.Session.SessionSettings.Get(FName("MatchType"),MatchType);
+
+		if (GEngine){GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Cyan, FString::Printf(TEXT("ID: %s  UserName: %s"), *Id,*UserName));}
+		if (MatchType == FString("FreeForAll"))
+		{
+			if (GEngine) { GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Cyan, FString::Printf(TEXT("Joining Match Type: %s"), *MatchType)); }
+			OnlineSessionInterface->AddOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegate);
+
+			const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+			OnlineSessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(),NAME_GameSession,Result);
+	    }
+	}
+}
+
+void AMultiPlayerTestCharacter::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
+{
+	if (!OnlineSessionInterface.IsValid()) { return; }
+
+	FString Address;
+	if (OnlineSessionInterface->GetResolvedConnectString(NAME_GameSession, Address))
+	{
+		if (GEngine) { GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("Connect string: %s"), *Address)); }
+	}
+	APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController();
+	if (PlayerController)
+	{
+		PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
+	}
+
 }
 
 void AMultiPlayerTestCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)

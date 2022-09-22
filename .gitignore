@@ -7,3 +7,5 @@ MultiPlayerTest/Binaries/
 MultiPlayerTest/Build/
 MultiPlayerTest/Saved/
 MultiPlayerTest/.vs/
+MultiPlayerTest/Plugins/MultiPlayerSessions/Binaries/
+MultiPlayerTest/Plugins/MultiPlayerSessions/Intermediate/
