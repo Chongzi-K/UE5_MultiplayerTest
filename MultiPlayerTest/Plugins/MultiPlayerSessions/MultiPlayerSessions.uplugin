@@ -24,11 +24,11 @@
 	"Plugins": [
 		{
 			"Name": "OnlineSubsystem",
-			"Enable": true
+			"Enabled": true
 		},
 		{
 			"Name": "OnlineSubsystemSteam",
-			"Enable": true
+			"Enabled": true
 		}
 	]
 }
