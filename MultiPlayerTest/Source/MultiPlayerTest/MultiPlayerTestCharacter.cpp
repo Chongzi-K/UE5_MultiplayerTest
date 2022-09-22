@@ -9,12 +9,14 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "OnlineSubsystem.h"
-#include "Interfaces/OnlineSessionInterface.h"
+#include "OnlineSessionSettings.h"
+
 
 //////////////////////////////////////////////////////////////////////////
 // AMultiPlayerTestCharacter
 
-AMultiPlayerTestCharacter::AMultiPlayerTestCharacter()
+AMultiPlayerTestCharacter::AMultiPlayerTestCharacter():
+	CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this,&AMultiPlayerTestCharacter::OnCreateSessionComplete))
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -88,6 +90,55 @@ void AMultiPlayerTestCharacter::SetupPlayerInputComponent(class UInputComponent*
 	// handle touch devices
 	PlayerInputComponent->BindTouch(IE_Pressed, this, &AMultiPlayerTestCharacter::TouchStarted);
 	PlayerInputComponent->BindTouch(IE_Released, this, &AMultiPlayerTestCharacter::TouchStopped);
+}
+
+void AMultiPlayerTestCharacter::CreatGameSession()
+{
+	//called when pressing "1" key
+	if (!OnlineSessionInterface.IsValid()) { return; }
+	auto ExistingSession = OnlineSessionInterface->GetNamedSession(NAME_GameSession);
+	if (ExistingSession != nullptr)
+	{
+		//if existing session, destroy it 
+		OnlineSessionInterface->DestroySession(NAME_GameSession);
+	}
+
+	//add our delegate to delegate list
+	OnlineSessionInterface->AddOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegate);
+
+	//create a new session
+	TSharedPtr<FOnlineSessionSettings> SessionSettings = MakeShareable(new FOnlineSessionSettings());
+	
+	SessionSettings->bIsLANMatch = false;
+	SessionSettings->NumPublicConnections = 4;//最大连接数量
+	SessionSettings->bAllowJoinInProgress = true;//允许在会话已被创建时加入
+	SessionSettings->bAllowJoinViaPresence = true;//可以通过steam加入
+	SessionSettings->bShouldAdvertise = true;//通过steam公开
+	SessionSettings->bUsesPresence = true;//使用steam账户所在地区
+	SessionSettings->bUseLobbiesIfAvailable = true;
+
+
+	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+	OnlineSessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, *SessionSettings);
+
+}
+
+void AMultiPlayerTestCharacter::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
+{
+	if (bWasSuccessful)
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Green, FString::Printf(TEXT("Success to create session %s"),*SessionName.ToString()));
+		}
+	}
+	else
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, FString::Printf(TEXT("Fail to create session")));
+		}
+	}
 }
 
 void AMultiPlayerTestCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
