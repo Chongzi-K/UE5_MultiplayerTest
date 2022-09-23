@@ -22,6 +22,7 @@ public:
 protected:
 
 	virtual bool Initialize() override;
+	virtual void OnLevelRemovedFromWorld(ULevel* InLevel, UWorld* InWorld) override;
 
 private:
 
@@ -37,6 +38,8 @@ private:
 
 	UFUNCTION()
 	void JoinButtonClicked();
+
+	void MenuTearDown();
 
 	//subsystem to handle all online session  functionality
 	class UMultiplayerSessionsSubsystem* MultiplayerSessionsSubsystem;

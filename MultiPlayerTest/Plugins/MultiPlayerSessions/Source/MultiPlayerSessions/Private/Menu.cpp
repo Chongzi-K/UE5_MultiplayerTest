@@ -47,6 +47,12 @@ bool UMenu::Initialize()
 	return true;
 }
 
+void UMenu::OnLevelRemovedFromWorld(ULevel* InLevel, UWorld* InWorld)
+{
+	MenuTearDown();
+	Super::OnLevelRemovedFromWorld(InLevel, InWorld);
+}
+
 void UMenu::HostButtonClicked()
 {
 	if (GEngine) { GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("Click Host Button"))); }
@@ -68,4 +74,20 @@ void UMenu::JoinButtonClicked()
 	if (GEngine) { GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("Click Join Button"))); }
 
 
+}
+
+void UMenu::MenuTearDown()
+{
+	RemoveFromParent();
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		APlayerController* PlayerContorller = World->GetFirstPlayerController();
+		if (PlayerContorller)
+		{
+			FInputModeGameOnly InputModeData;
+			PlayerContorller->SetInputMode(InputModeData);
+			PlayerContorller->SetShowMouseCursor(false);
+		}
+	}
 }
