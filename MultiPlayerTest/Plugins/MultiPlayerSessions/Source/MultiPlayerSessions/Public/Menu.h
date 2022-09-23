@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Interfaces/OnlineSessionInterface.h"
 #include "Menu.generated.h"
 
 /**
@@ -17,12 +18,30 @@ class MULTIPLAYERSESSIONS_API UMenu : public UUserWidget
 public:
 
 	UFUNCTION(BlueprintCallable)
-	void MenuSetup();
+		void MenuSetup(int32 NumberOfPublicConnections = 4, FString TypeOfMatch = FString(TEXT("FreeForAll")));
 
 protected:
 
 	virtual bool Initialize() override;
+
+	//auto called when level removed from world 
 	virtual void OnLevelRemovedFromWorld(ULevel* InLevel, UWorld* InWorld) override;
+
+	//
+	//用于 MultiplayerSessionSubsysten 中自定义委托的回调函数
+	//
+	UFUNCTION()
+	void OnCreateSession(bool bWasSuccessful);
+
+	void OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResult, bool bWasSeccessful);
+    
+	void OnJoinSession(EOnJoinSessionCompleteResult::Type Result);
+	
+	UFUNCTION()
+	void OnDestroySession(bool bWasSuccessful);
+	
+	UFUNCTION()
+	void OnStartSession(bool bWasSuccessful);
 
 private:
 
@@ -43,5 +62,8 @@ private:
 
 	//subsystem to handle all online session  functionality
 	class UMultiplayerSessionsSubsystem* MultiplayerSessionsSubsystem;
+
+	int32 NumPublicConnections{4};
+	FString MatchType{TEXT("FreeForAll")};
 	
 };
