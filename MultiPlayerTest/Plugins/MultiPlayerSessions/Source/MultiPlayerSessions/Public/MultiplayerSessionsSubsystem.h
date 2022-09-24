@@ -87,5 +87,9 @@ private:
 
 	FOnStartSessionCompleteDelegate StartSessionCompleteDelegate;
 	FDelegateHandle StartSessionCompleteDelegateHandle;
+
+	bool bCreateSessionOnDestroy{ false };//销毁会话时检查此变量与回调函数，如果真，则可以再次创建会话
+	int32 LastNumPublicConnections;
+	FString LastMatchType;
 	
 };

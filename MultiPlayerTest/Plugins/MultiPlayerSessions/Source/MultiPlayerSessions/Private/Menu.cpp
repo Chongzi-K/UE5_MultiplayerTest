@@ -84,6 +84,7 @@ void UMenu::OnCreateSession(bool bWasSuccessful)
 	else
 	{
 		if (GEngine) { GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, FString::Printf(TEXT("Create Session Fail!"))); }
+		HostButton->bIsEnabled = true;//创建会话失败，启用按钮作用
 	}
 }
 
@@ -100,6 +101,11 @@ void UMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResu
 			MultiplayerSessionsSubsystem->JoinSession(Result);
 			return;
 		}
+	}
+	if (!bWasSeccessful||SessionResult.Num()==0)
+	{
+		//查找会话失败 或 未找到会话，恢复按钮作用
+		JoinButton->SetIsEnabled(true);
 	}
 }
 
@@ -121,6 +127,11 @@ void UMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type Result)
 			}
 		}
 	}
+	if (Result != EOnJoinSessionCompleteResult::Success)
+	{
+		//找到回话但加入回话失败，恢复按钮功能
+		JoinButton->bIsEnabled = true;
+	}
 }
 
 void UMenu::OnDestroySession(bool bWasSuccessful)
@@ -135,6 +146,9 @@ void UMenu::HostButtonClicked()
 {
 	if (GEngine) { GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("Click Host Button"))); }
 
+	//按下按钮后立刻禁用再次点击，防止多次点击，回调函数中恢复
+	HostButton->SetIsEnabled(false);
+
 	if (MultiplayerSessionsSubsystem)
 	{
 		MultiplayerSessionsSubsystem->CreateSession(NumPublicConnections, MatchType);
@@ -145,6 +159,8 @@ void UMenu::HostButtonClicked()
 void UMenu::JoinButtonClicked()
 {
 	if (GEngine) { GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("Click Join Button"))); }
+
+	JoinButton->SetIsEnabled(false);//禁用再次点击，回调函数中恢复
 
 	if (MultiplayerSessionsSubsystem)
 	{
