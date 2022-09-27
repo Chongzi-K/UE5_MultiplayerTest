@@ -29,4 +29,7 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	bIsInAir = MainCharacter->GetCharacterMovement()->IsFalling();
 	//正在加速？
 	bIsAccelerating = MainCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f ? true : false;
+	bWeaponEquipped = MainCharacter->IsWeaponEquipped();
+
+
 }

@@ -8,6 +8,7 @@
 #include "Components/WidgetComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "MultiplayerProject/Weapon/Weapon.h"
+#include "MultiplayerProject/Components_Pawn/CombatComponent.h"
 
 AMainCharacter::AMainCharacter()
 {
@@ -30,7 +31,20 @@ AMainCharacter::AMainCharacter()
 	OverHeadWidget->SetupAttachment(RootComponent);
 	OverHeadWidget->SetDrawSize(FVector2D(500.f,500.f));
 
+	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
+	CombatComponent->SetIsReplicated(true);//开启复制
 
+
+}
+
+void AMainCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	if (CombatComponent)
+	{
+		CombatComponent->MainCharacter = this;
+	}
 }
 
 void AMainCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -66,6 +80,7 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAxis("LookUp", this, &AMainCharacter::LookUp);
 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AMainCharacter::Jump);
+	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &AMainCharacter::EquipButtonPressed);
 
 }
 
@@ -105,6 +120,31 @@ void AMainCharacter::LookUp(float Value)
 	AddControllerPitchInput(Value);
 }
 
+void AMainCharacter::EquipButtonPressed()
+{
+	if (CombatComponent)
+	{
+		if (HasAuthority())
+		{
+			CombatComponent->EquipWeapon(OverlappingWeapon);
+		}
+		else
+		{
+			//客户端需要通过RPC，在客户端上调用服务器函数实现
+			ServerEquipButtonPressed();
+		}
+
+	}
+}
+
+void AMainCharacter::ServerEquipButtonPressed_Implementation()
+{
+	if (CombatComponent)
+	{
+		CombatComponent->EquipWeapon(OverlappingWeapon);
+	}
+}
+
 //该函数只会在服务器被调用，因为只有服务器才开启了触发重叠事件
 void AMainCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 {
@@ -139,4 +179,9 @@ void AMainCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 	{
 		LastWeapon->ShowPickupWidget(false);
 	}
+}
+
+bool AMainCharacter::IsWeaponEquipped()
+{
+	return(CombatComponent && CombatComponent->EquippedWeapon);
 }
