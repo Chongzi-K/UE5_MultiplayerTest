@@ -30,6 +30,7 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	//正在加速？
 	bIsAccelerating = MainCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f ? true : false;
 	bWeaponEquipped = MainCharacter->IsWeaponEquipped();
+	bIsCrouched = MainCharacter->bIsCrouched;
 
 
 }

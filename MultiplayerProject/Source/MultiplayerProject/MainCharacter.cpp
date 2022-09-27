@@ -34,6 +34,7 @@ AMainCharacter::AMainCharacter()
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	CombatComponent->SetIsReplicated(true);//开启复制
 
+	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 
 }
 
@@ -81,6 +82,7 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AMainCharacter::Jump);
 	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &AMainCharacter::EquipButtonPressed);
+	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AMainCharacter::CrouchButtonPressed);
 
 }
 
@@ -134,6 +136,20 @@ void AMainCharacter::EquipButtonPressed()
 			ServerEquipButtonPressed();
 		}
 
+	}
+}
+
+void AMainCharacter::CrouchButtonPressed()
+{
+	if (bIsCrouched)
+	{
+		UnCrouch();
+	}
+	else
+	{
+		//需要在charactermovement中设置蹲伏半高60，移动速度100；
+		//CharacterMovement->SetCrouchedHalfHeight(60.0f);
+		Crouch();//继承自character类的bIsCrouch在这个函数里会被改变并复制
 	}
 }
 
