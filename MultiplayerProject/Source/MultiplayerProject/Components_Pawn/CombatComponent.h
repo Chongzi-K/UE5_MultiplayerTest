@@ -36,12 +36,17 @@ protected:
 	UFUNCTION(Server, Reliable)//RPC 可以传入函数，OnRep不可以
 	void ServerSetAiming(bool bIsAiming);
 
+	UFUNCTION()
+	void OnRep_EquippedWeapon();
+
+
+
 private:
 
 	UPROPERTY()
 	class AMainCharacter* MainCharacter;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;
 
 	UPROPERTY(Replicated)

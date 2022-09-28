@@ -43,5 +43,16 @@ private:
 	UPROPERTY(BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	bool bAiming;
 
+	UPROPERTY(BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	float YawOffset;
+
+	UPROPERTY(BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	float Lean;
+
+	//用上一帧的 rotation 和这一帧 rotation 计算转弯倾斜角度
+	FRotator CharacterRotationLastFrame;
+	FRotator CharacterRotationThisFrame;
+	FRotator DeltaRotaion;
+
 
 };

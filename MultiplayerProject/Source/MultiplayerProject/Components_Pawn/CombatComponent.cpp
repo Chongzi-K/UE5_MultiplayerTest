@@ -7,6 +7,7 @@
 #include "Engine/SkeletalMeshSocket.h"
 #include "Components/SphereComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 UCombatComponent::UCombatComponent()
 {
@@ -49,9 +50,11 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	}
 	EquippedWeapon->SetOwner(MainCharacter);
 	//SetOwner的参数Owner已经开启了复制，并且还有函数 OnRep_Owner()
+	MainCharacter->GetCharacterMovement()->bOrientRotationToMovement = false;
+	MainCharacter->bUseControllerRotationYaw = true;
+
 
 }
-
 
 void UCombatComponent::SetAiming(bool bIsAiming)
 {
@@ -71,3 +74,14 @@ void UCombatComponent::ServerSetAiming_Implementation(bool bIsAiming)
 {
 	bAiming = bIsAiming;
 }
+
+void UCombatComponent::OnRep_EquippedWeapon()
+{
+	if (EquippedWeapon&&MainCharacter)
+	{
+		//解决这两个值无法被正确复制到另一个客户端的问题
+		MainCharacter->GetCharacterMovement()->bOrientRotationToMovement = false;
+		MainCharacter->bUseControllerRotationYaw = true;
+	}
+}
+
