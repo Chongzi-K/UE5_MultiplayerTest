@@ -33,6 +33,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UCombatComponent, EquippedWeapon);
+	DOREPLIFETIME(UCombatComponent, bAiming);
 }
 
 void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
@@ -51,3 +52,22 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 }
 
+
+void UCombatComponent::SetAiming(bool bIsAiming)
+{
+	//Character 传入
+	//提前修改，使得客户端可以在 bAiming在服务器上被修改之前就看到 bAiming 被修改的结果：触发动画
+	bAiming = bIsAiming;
+	//if (!MainCharacter->HasAuthority())
+	//{
+	//	//如果不是服务器，则调用 RPC，在客户端上触发 修改服务器中对应实例 bAiming 的函数
+	//	ServerSetAiming(bIsAiming);
+	//}
+	//RPC不会在服务器上对自己调用，所以不用判断
+	ServerSetAiming(bIsAiming);
+}
+
+void UCombatComponent::ServerSetAiming_Implementation(bool bIsAiming)
+{
+	bAiming = bIsAiming;
+}

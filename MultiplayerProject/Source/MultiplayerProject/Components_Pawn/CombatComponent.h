@@ -31,6 +31,11 @@ protected:
 
 	virtual void BeginPlay() override;
 
+	void SetAiming(bool bIsAiming);
+
+	UFUNCTION(Server, Reliable)//RPC 可以传入函数，OnRep不可以
+	void ServerSetAiming(bool bIsAiming);
+
 private:
 
 	UPROPERTY()
@@ -38,6 +43,9 @@ private:
 
 	UPROPERTY(Replicated)
 	AWeapon* EquippedWeapon;
+
+	UPROPERTY(Replicated)
+	bool bAiming;
 
 
 		

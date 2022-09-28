@@ -83,6 +83,9 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AMainCharacter::Jump);
 	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &AMainCharacter::EquipButtonPressed);
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AMainCharacter::CrouchButtonPressed);
+	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &AMainCharacter::AimButtonPressed);
+	PlayerInputComponent->BindAction("Aim", IE_Released, this, &AMainCharacter::AimButtonReleased);
+
 
 }
 
@@ -153,6 +156,22 @@ void AMainCharacter::CrouchButtonPressed()
 	}
 }
 
+void AMainCharacter::AimButtonPressed()
+{
+	if (CombatComponent)
+	{
+		CombatComponent->SetAiming(true);
+	}
+}
+
+void AMainCharacter::AimButtonReleased()
+{
+	if (CombatComponent)
+	{
+		CombatComponent->SetAiming(false);
+	}
+}
+
 void AMainCharacter::ServerEquipButtonPressed_Implementation()
 {
 	if (CombatComponent)
@@ -200,4 +219,9 @@ void AMainCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 bool AMainCharacter::IsWeaponEquipped()
 {
 	return(CombatComponent && CombatComponent->EquippedWeapon);
+}
+
+bool AMainCharacter::IsAiming()
+{
+	return(CombatComponent && CombatComponent->bAiming);
 }
