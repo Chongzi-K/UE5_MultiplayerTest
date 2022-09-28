@@ -9,6 +9,8 @@
 #include "Net/UnrealNetwork.h"
 #include "MultiplayerProject/Weapon/Weapon.h"
 #include "MultiplayerProject/Components_Pawn/CombatComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 
 AMainCharacter::AMainCharacter()
 {
@@ -36,6 +38,8 @@ AMainCharacter::AMainCharacter()
 
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera,ECollisionResponse::ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 }
 
 void AMainCharacter::PostInitializeComponents()
@@ -68,6 +72,8 @@ void AMainCharacter::BeginPlay()
 void AMainCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	AimOffset(DeltaTime);
 
 }
 
@@ -224,4 +230,46 @@ bool AMainCharacter::IsWeaponEquipped()
 bool AMainCharacter::IsAiming()
 {
 	return(CombatComponent && CombatComponent->bAiming);
+}
+
+void AMainCharacter::AimOffset(float DeltaTime)
+{
+	if (CombatComponent && CombatComponent->EquippedWeapon == nullptr) { return; }
+	FVector Velocity = GetVelocity();
+	Velocity.Z = 0.f;
+	float Speed = Velocity.Size();
+	bool bIsInAir = GetCharacterMovement()->IsFalling();
+
+	if (Speed == 0.0f && !bIsInAir)//站立，不跳
+	{
+		FRotator CurrentAimRotation = FRotator(0.0f, GetBaseAimRotation().Yaw, 0.0f);
+		FRotator DeltaAimRotation = UKismetMathLibrary::NormalizedDeltaRotator(CurrentAimRotation, StartingAimRotation);
+		AimOffset_Yaw = DeltaAimRotation.Yaw;
+		bUseControllerRotationYaw = false;
+	}
+	if (Speed > 0.0f || bIsInAir)//跑或跳
+	{
+		StartingAimRotation = FRotator(0.0f, GetBaseAimRotation().Yaw,0.0f);
+		AimOffset_Yaw = 0.0f;
+		bUseControllerRotationYaw = true;
+	}
+
+	AimOffset_Pitch = GetBaseAimRotation().Pitch;
+	//CharacterMovementComponent->GetPackedAngles()中 把 Rotation 压缩到 5 bytes
+    // CompressAxisToShort(float Angle){return FMath::RoundToInt(Angle*65536.f/360.f)&0xFFFf;}
+    //Rotation 发送时从 float 压缩成了 int ，接收时恢复为 float
+    //负值在压缩解压后会变为正值
+	if (AimOffset_Pitch > 90.0f && !IsLocallyControlled())
+	{
+		//把 Pitch 从 [270，360）映射到[-90，0）
+		FVector2D InRange(270.0f, 360.0f);
+		FVector2D OutRange(-90.0f, 0.0f);
+		AimOffset_Yaw = FMath::GetMappedRangeValueClamped(InRange, OutRange,AimOffset_Pitch);
+	}
+}
+
+AWeapon* AMainCharacter::GetEquippedWeapon()
+{
+	if (CombatComponent == nullptr) { return nullptr; }
+	return CombatComponent->EquippedWeapon;
 }
