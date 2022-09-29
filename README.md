@@ -19,6 +19,8 @@
 			
 			https://zhuanlan.zhihu.com/p/23480071       ——————大钊：《InsideUE4》GamePlay架构（五）Controller
 			
+			https://zhuanlan.zhihu.com/p/361520144      ——————逆运动学(六): FABRIK （20220929）
+			
 ------------------		
 https://www.bilibili.com/video/BV1Wa411J7w3 ——————[英文直播]生存游戏《Derelicts》是如何诞生的(官方字幕)
 

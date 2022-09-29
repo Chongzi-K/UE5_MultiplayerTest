@@ -5,6 +5,7 @@
 #include "MainCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "MultiplayerProject/Weapon/Weapon.h"
 
 void UMainAnimInstance::NativeInitializeAnimation()
 {
@@ -31,6 +32,7 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	//正在加速？
 	bIsAccelerating = MainCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f ? true : false;
 	bWeaponEquipped = MainCharacter->IsWeaponEquipped();
+	EquippedWeapon = MainCharacter->GetEquippedWeapon();
 	bIsCrouched = MainCharacter->bIsCrouched;
 	bAiming = MainCharacter->IsAiming();
 
@@ -53,8 +55,14 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	AimOffset_Yaw = MainCharacter->GetAimOffset_Yaw();
 	AimOffset_Pitch = MainCharacter->GetAimOffset_Pitch();
 
-	if (bWeaponEquipped)
+	if (bWeaponEquipped&&EquippedWeapon&&EquippedWeapon->GetWeaponMesh()&&MainCharacter->GetMesh())
 	{
-
+		//将左手骨骼附着到武器骨骼的插槽中
+		LeftHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("LeftHandSocket"),ERelativeTransformSpace::RTS_World);
+		FVector OutPosition;
+		FRotator OutRotation;
+		MainCharacter->GetMesh()->TransformFromBoneSpace(FName("hand_r"),LeftHandTransform.GetLocation(),FRotator::ZeroRotator,OutPosition,OutRotation);
+		LeftHandTransform.SetLocation(OutPosition);
+		LeftHandTransform.SetRotation(FQuat(OutRotation));
 	}
 }
