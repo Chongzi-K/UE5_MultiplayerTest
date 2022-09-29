@@ -37,6 +37,7 @@ AMainCharacter::AMainCharacter()
 	CombatComponent->SetIsReplicated(true);//¿ªÆô¸´ÖÆ
 
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 0.0f, 850.0f);
 
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera,ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
@@ -309,3 +310,18 @@ AWeapon* AMainCharacter::GetEquippedWeapon()
 	if (CombatComponent == nullptr) { return nullptr; }
 	return CombatComponent->EquippedWeapon;
 }
+
+void AMainCharacter::Jump()
+{
+	if (bIsCrouched)
+	{
+		UnCrouch();
+	}
+	else
+	{
+		Super::Jump();
+	}
+}
+
+
+
