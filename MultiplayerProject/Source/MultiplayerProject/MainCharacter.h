@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "MultiplayerProject/Types/TurningInPlace.h"
 #include "MainCharacter.generated.h"
 
 
@@ -69,6 +70,9 @@ private:
 	float AimOffset_Pitch;
 	FRotator StartingAimRotation;
 
+	ETurningInPlace TurningInPlace;
+	void TurnInPlace(float DeltaTime);//在原地转身超过90度时触发转身动画
+
 
 public:
 
@@ -78,6 +82,7 @@ public:
 
 	FORCEINLINE float GetAimOffset_Yaw() const { return AimOffset_Yaw; }
 	FORCEINLINE float GetAimOffset_Pitch() const { return AimOffset_Pitch; }
+	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; };
 
 	AWeapon* GetEquippedWeapon();
 

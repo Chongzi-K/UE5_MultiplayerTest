@@ -40,6 +40,10 @@ AMainCharacter::AMainCharacter()
 
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera,ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+
+	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+
+
 }
 
 void AMainCharacter::PostInitializeComponents()
@@ -246,12 +250,14 @@ void AMainCharacter::AimOffset(float DeltaTime)
 		FRotator DeltaAimRotation = UKismetMathLibrary::NormalizedDeltaRotator(CurrentAimRotation, StartingAimRotation);
 		AimOffset_Yaw = DeltaAimRotation.Yaw;
 		bUseControllerRotationYaw = false;
+		TurnInPlace(DeltaTime);//解决转身角度突变问题
 	}
 	if (Speed > 0.0f || bIsInAir)//跑或跳
 	{
 		StartingAimRotation = FRotator(0.0f, GetBaseAimRotation().Yaw,0.0f);
 		AimOffset_Yaw = 0.0f;
 		bUseControllerRotationYaw = true;
+		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 	}
 
 	AimOffset_Pitch = GetBaseAimRotation().Pitch;
@@ -265,6 +271,18 @@ void AMainCharacter::AimOffset(float DeltaTime)
 		FVector2D InRange(270.0f, 360.0f);
 		FVector2D OutRange(-90.0f, 0.0f);
 		AimOffset_Yaw = FMath::GetMappedRangeValueClamped(InRange, OutRange,AimOffset_Pitch);
+	}
+}
+
+void AMainCharacter::TurnInPlace(float DeltaTime)
+{
+	if (AimOffset_Yaw>90.0f)
+	{
+		TurningInPlace = ETurningInPlace::ETIP_Right;
+	}
+	else if(AimOffset_Yaw<-90.0f)
+	{
+		TurningInPlace = ETurningInPlace::ETIP_Left;
 	}
 }
 
