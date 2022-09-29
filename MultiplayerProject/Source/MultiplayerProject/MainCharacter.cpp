@@ -43,6 +43,9 @@ AMainCharacter::AMainCharacter()
 
 	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 
+	NetUpdateFrequency = 60.f;
+	MinNetUpdateFrequency = 30.f;
+
 
 }
 
@@ -249,6 +252,10 @@ void AMainCharacter::AimOffset(float DeltaTime)
 		FRotator CurrentAimRotation = FRotator(0.0f, GetBaseAimRotation().Yaw, 0.0f);
 		FRotator DeltaAimRotation = UKismetMathLibrary::NormalizedDeltaRotator(CurrentAimRotation, StartingAimRotation);
 		AimOffset_Yaw = DeltaAimRotation.Yaw;
+		if (TurningInPlace == ETurningInPlace::ETIP_NotTurning)
+		{
+			InterpAimOffset_Yaw = AimOffset_Yaw;
+		}
 		bUseControllerRotationYaw = false;
 		TurnInPlace(DeltaTime);//解决转身角度突变问题
 	}
@@ -283,6 +290,17 @@ void AMainCharacter::TurnInPlace(float DeltaTime)
 	else if(AimOffset_Yaw<-90.0f)
 	{
 		TurningInPlace = ETurningInPlace::ETIP_Left;
+	}
+	if (TurningInPlace != ETurningInPlace::ETIP_NotTurning)
+	{
+		InterpAimOffset_Yaw = FMath::FInterpTo(InterpAimOffset_Yaw, 0.0f, DeltaTime, 4.0f);
+		AimOffset_Yaw = InterpAimOffset_Yaw;
+		if (FMath::Abs(AimOffset_Yaw) < 15.0f)
+		{
+			//转动 root bone 到一定角度就停止旋转
+			TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+			StartingAimRotation = FRotator(0.0f, GetBaseAimRotation().Yaw, 0.0f);
+		}
 	}
 }
 

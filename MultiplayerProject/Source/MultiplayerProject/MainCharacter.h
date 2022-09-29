@@ -72,7 +72,7 @@ private:
 
 	ETurningInPlace TurningInPlace;
 	void TurnInPlace(float DeltaTime);//在原地转身超过90度时触发转身动画
-
+	float InterpAimOffset_Yaw;
 
 public:
 
