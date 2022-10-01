@@ -6,6 +6,8 @@
 #include "Components/WidgetComponent.h"
 #include "MultiplayerProject/MainCharacter.h"
 #include "Net/UnrealNetwork.h"
+#include "Animation/AnimationAsset.h"
+#include "Components/SkeletalMeshComponent.h"
 
 // Sets default values
 AWeapon::AWeapon()
@@ -120,3 +122,10 @@ void AWeapon::OnRep_WeaponState()
 	}
 }
 
+void AWeapon::Fire()
+{
+	if (FireAnimation)
+	{
+		WeaponMesh->PlayAnimation(FireAnimation,false);
+    }
+}

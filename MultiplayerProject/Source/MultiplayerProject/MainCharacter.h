@@ -26,6 +26,8 @@ public:
 
 	virtual void PostInitializeComponents()override;//初始化组件
 
+	void PlayFireMontage(bool bAiming);
+
 protected:
 
 	virtual void BeginPlay() override;
@@ -40,6 +42,8 @@ protected:
 	void AimButtonReleased();
 	void AimOffset(float DeltaTime);
 	virtual void Jump()override;
+	void FireButtonPressed();
+	void FireButtonReleased();
 
 private:
 
@@ -74,6 +78,9 @@ private:
 	ETurningInPlace TurningInPlace;
 	void TurnInPlace(float DeltaTime);//在原地转身超过90度时触发转身动画
 	float InterpAimOffset_Yaw;
+
+	UPROPERTY(EditAnywhere,Category="Combat")
+	class UAnimMontage* FireWeaponMontage;
 
 public:
 
