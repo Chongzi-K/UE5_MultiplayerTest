@@ -94,5 +94,7 @@ public:
 
 	AWeapon* GetEquippedWeapon();
 
+	FVector GetHitTarget()const;
+
 };
 

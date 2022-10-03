@@ -83,4 +83,24 @@ public:
 	void SetWeaponState(EWeaponState  StateToSet);
 	FORCEINLINE USphereComponent* GetAreaSphere()const { return AreaSphere; }
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
+
+
+public:
+	//
+	//武器准星材质，提供给MainHUD
+	//
+	UPROPERTY(EditAnywhere,Category="Crosshairs")
+	class UTexture2D* CrosshairsCenter;
+
+	UPROPERTY(EditAnywhere, Category = "Crosshairs")
+	class UTexture2D* CrosshairsLeft;
+
+	UPROPERTY(EditAnywhere, Category = "Crosshairs")
+	class UTexture2D* CrosshairsRight;
+
+	UPROPERTY(EditAnywhere, Category = "Crosshairs")
+	class UTexture2D* CrosshairsTop;
+
+	UPROPERTY(EditAnywhere, Category = "Crosshairs")
+	class UTexture2D* CrosshairsBottom;
 };

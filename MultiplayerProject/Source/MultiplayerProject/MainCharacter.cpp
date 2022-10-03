@@ -357,4 +357,8 @@ void AMainCharacter::PlayFireMontage(bool bAiming)
 
 }
 
-
+FVector AMainCharacter::GetHitTarget()const
+{
+	if (CombatComponent == nullptr) { return FVector(); }
+	return CombatComponent->HitTarget;
+}
