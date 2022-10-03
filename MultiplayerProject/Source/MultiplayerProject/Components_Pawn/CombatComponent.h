@@ -42,10 +42,13 @@ protected:
 	void FireButtonPressed(bool bPressed);
 
 	UFUNCTION(Server, Reliable)
-	void ServerFire();
+	void ServerFire(const FVector_NetQuantize& TraceHitTarget);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastFire();
+	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);
+	//FVector_NetQuantize 是FVector的子类，四舍五入为0位小数位的浮点数，大小为20bit，即范围为 +-2^20
+
+	void TraceUnderCrosshairs(FHitResult& TraceHitResult); 
 
 
 private:
@@ -66,5 +69,6 @@ private:
 	float AimWalkSpeed;
 
 	bool bFireButtonPressed;
+
 		
 };
