@@ -91,6 +91,7 @@ public:
 	FORCEINLINE float GetAimOffset_Yaw() const { return AimOffset_Yaw; }
 	FORCEINLINE float GetAimOffset_Pitch() const { return AimOffset_Pitch; }
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; };
+	FORCEINLINE UCameraComponent* GetFollowCamera()const { return FollowCamera; }
 
 	AWeapon* GetEquippedWeapon();
 

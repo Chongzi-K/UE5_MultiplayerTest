@@ -80,5 +80,19 @@ private:
 
 	FVector HitTarget;
 
-		
+	//
+	//瞄准与视角拉进拉远
+	//
+	float DefaultFOV;//不瞄准时的默认视野
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float ZoomedFOV = 30.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float ZoomInterpSpeed = 20.0f;
+
+	float CurrentFOV;
+
+	void InterpFOV(float DeltaTime);
+
 };

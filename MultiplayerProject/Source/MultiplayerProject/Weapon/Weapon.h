@@ -83,6 +83,8 @@ public:
 	void SetWeaponState(EWeaponState  StateToSet);
 	FORCEINLINE USphereComponent* GetAreaSphere()const { return AreaSphere; }
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
+	FORCEINLINE float GetZoomedFOV()const { return ZoomedFOV; }
+	FORCEINLINE float GetZoomInterpSpeed()const { return ZoomedInterpSpeed; }
 
 
 public:
@@ -103,4 +105,15 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Crosshairs")
 	class UTexture2D* CrosshairsBottom;
+
+	//
+	//Aiming 时拉进拉远视角
+	//
+	UPROPERTY(EditAnywhere)
+	float ZoomedFOV = 30.0f;
+
+	UPROPERTY(EditAnywhere)
+	float ZoomedInterpSpeed = 20.0f;
+
+
 };

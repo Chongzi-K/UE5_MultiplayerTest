@@ -76,7 +76,7 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaTime)
 		if (MainCharacter->IsLocallyControlled())
 		{
 			//只对本端有效果，减少带宽占用
-			bLocallyControlled = true;
+			bLocallyControlled = true; 
 			FTransform RightHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("Hand_R"), ERelativeTransformSpace::RTS_World);
 			RightHandRotation = UKismetMathLibrary::FindLookAtRotation(RightHandTransform.GetLocation(), RightHandTransform.GetLocation() + (RightHandTransform.GetLocation() - MainCharacter->GetHitTarget()));
 		} 
