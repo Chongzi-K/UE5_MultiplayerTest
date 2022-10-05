@@ -19,23 +19,25 @@ public:
 	AMainCharacter();
 
 	virtual void Tick(float DeltaTime) override;
-
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 	//在其中确定 哪些变量在发生变化时复制到客户端上
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
 	virtual void PostInitializeComponents()override;//初始化组件
-
 	void PlayFireMontage(bool bAiming);
-
-	//UFUNCTION(NetMulticast, Unreliable)
-	//	void MulticastHit();
-
+	void PlayElimMontage();
 	virtual void OnRep_ReplicatedMovement()override;
 
 	//被淘汰
 	void Elim();
+	UFUNCTION(NetMulticast,Reliable)
+	void MulticastElim();
+
+	FTimerHandle ElimTimer;
+
+	void ElimTimerFinish();
+
+	UPROPERTY(EditDefaultsOnly)
+	float ElimDelay = 3.0f;
 
 protected:
 
@@ -133,6 +135,11 @@ private:
 
 	class AMainPlayerController* MainPlyerController;
 
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	class UAnimMontage* ElimMontage;
+
+	bool bElimmed = false;
+
 public:
 
 	void SetOverlappingWeapon(AWeapon* Weapon);
@@ -144,6 +151,7 @@ public:
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; };
 	FORCEINLINE UCameraComponent* GetFollowCamera()const { return FollowCamera; }
 	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; }
+	FORCEINLINE bool IsElimmed()const { return bElimmed; }
 
 	AWeapon* GetEquippedWeapon();
 

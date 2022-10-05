@@ -37,7 +37,7 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	bAiming = MainCharacter->IsAiming();
 	TurningInPlace = MainCharacter->GetTurningInPlace();
 	bRotateRootBone = MainCharacter->ShouldRotateRootBone();
-
+	bElimmed = MainCharacter->IsElimmed();
 
 	//OffSet,Yaw 
 	FRotator AimRotation = MainCharacter->GetBaseAimRotation();//Velocity 和 BaseAimRotation 在客户端上也会实时更新

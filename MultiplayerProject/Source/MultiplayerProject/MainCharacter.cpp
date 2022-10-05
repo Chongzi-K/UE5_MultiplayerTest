@@ -15,13 +15,14 @@
 #include "MultiplayerProject/MultiplayerProject.h"
 #include "MultiplayerProject/MainPlayerController/MainPlayerController.h"
 #include "MultiplayerProject/GameMode/MainGameMode.h"
-
+#include "TimerManager.h"
 
 
 AMainCharacter::AMainCharacter()
 {
  	
 	PrimaryActorTick.bCanEverTick = true;
+	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(GetMesh());
@@ -456,6 +457,15 @@ void AMainCharacter::PlayFireMontage(bool bAiming)
 	}
 }
 
+void AMainCharacter::PlayElimMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && ElimMontage)
+	{
+		AnimInstance->Montage_Play(ElimMontage);
+	}
+}
+
 void AMainCharacter::OnRep_ReplicatedMovement()
 {
 	Super::OnRep_ReplicatedMovement();
@@ -465,7 +475,24 @@ void AMainCharacter::OnRep_ReplicatedMovement()
 
 void AMainCharacter::Elim()
 {
+	//ÓÉ GameMode µ÷ÓÃ
+	MulticastElim();
+	GetWorldTimerManager().SetTimer(ElimTimer, this, &AMainCharacter::ElimTimerFinish, ElimDelay);
+}
 
+void AMainCharacter::ElimTimerFinish()
+{
+	AMainGameMode* MainGameMode = GetWorld()->GetAuthGameMode<AMainGameMode>();
+	if (MainGameMode)
+	{
+		MainGameMode->RequestRespawn(this, Controller);
+	}
+}
+
+void AMainCharacter::MulticastElim_Implementation()
+{
+	bElimmed = true;
+	PlayElimMontage();
 }
 
 void AMainCharacter::PlayHitReactMontage()
