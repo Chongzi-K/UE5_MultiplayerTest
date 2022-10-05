@@ -83,6 +83,11 @@ private:
 	UPROPERTY(EditAnywhere,Category="Combat")
 	class UAnimMontage* FireWeaponMontage;
 
+	void HideCamerIfCharacterClose();
+
+	UPROPERTY(EditAnywhere)
+	float CameraThresHold = 200.0f;//相机与人物距离小于某值则隐藏人物
+
 public:
 
 	void SetOverlappingWeapon(AWeapon* Weapon);

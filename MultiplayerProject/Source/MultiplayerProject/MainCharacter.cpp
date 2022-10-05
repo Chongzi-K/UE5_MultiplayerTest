@@ -85,6 +85,9 @@ void AMainCharacter::Tick(float DeltaTime)
 
 	AimOffset(DeltaTime);
 
+	HideCamerIfCharacterClose();
+
+
 }
 
 void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -194,6 +197,29 @@ void AMainCharacter::ServerEquipButtonPressed_Implementation()
 	if (CombatComponent)
 	{
 		CombatComponent->EquipWeapon(OverlappingWeapon);
+	}
+}
+
+void AMainCharacter::HideCamerIfCharacterClose()
+{
+	if (!IsLocallyControlled()) { return; }
+	if ((FollowCamera->GetComponentLocation() - GetActorLocation()).Size() < CameraThresHold)
+	{
+		GetMesh()->SetVisibility(false);
+		if (CombatComponent && CombatComponent->EquippedWeapon&&CombatComponent->EquippedWeapon->GetWeaponMesh())
+		{
+			//仅 owner 不可见
+			CombatComponent->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = true;
+		}
+	}
+	else
+	{
+		GetMesh()->SetVisibility(true);
+		if (CombatComponent && CombatComponent->EquippedWeapon && CombatComponent->EquippedWeapon->GetWeaponMesh())
+		{
+			//仅 owner 不可见
+			CombatComponent->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = false;
+		}
 	}
 }
 

@@ -13,7 +13,7 @@
 #include "MultiplayerProject/MainPlayerController/MainPlayerController.h"
 //#include "MultiplayerProject/HUD/MainHUD.h"
 #include "Camera/CameraComponent.h"
-
+#include "MultiplayerProject/MainCharacter.h"
 
 
 
@@ -164,6 +164,13 @@ void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 	if (bScreenToWorldSuccess)
 	{
 		FVector Start = CrosshairWorldPosition;
+
+		if (MainCharacter)
+		{
+			float DistanceToCharacter = (MainCharacter->GetActorLocation() - Start).Size();
+			Start += CrosshairWorldDirection * (DistanceToCharacter + 100.0f);
+		}
+
 		FVector End = Start + CrosshairWorldDirection * TRACE_LENGTH;
 
 		GetWorld()->LineTraceSingleByChannel(
