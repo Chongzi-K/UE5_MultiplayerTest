@@ -32,6 +32,8 @@ public:
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastHit();
 
+	virtual void OnRep_ReplicatedMovement()override;
+
 
 protected:
 
@@ -46,6 +48,10 @@ protected:
 	void AimButtonPressed();
 	void AimButtonReleased();
 	void AimOffset(float DeltaTime);
+
+	void CaculateAimOffset_Pitch();
+
+	void SimulateProxiesTurn();
 	virtual void Jump()override;
 	void FireButtonPressed();
 	void FireButtonReleased();
@@ -96,6 +102,15 @@ private:
 	UPROPERTY(EditAnywhere)
 	float CameraThresHold = 200.0f;//相机与人物距离小于某值则隐藏人物
 
+	bool bRotateRootBone;
+	float TurnThreshold = 0.5f;
+	FRotator ProxyRotationLastFrame;
+	FRotator ProxyRotationThisFrame;
+	float ProxyYaw;
+	float TimeSinceLastMovementReplication;
+	float CaculateSpeed();
+
+
 public:
 
 	void SetOverlappingWeapon(AWeapon* Weapon);
@@ -106,6 +121,7 @@ public:
 	FORCEINLINE float GetAimOffset_Pitch() const { return AimOffset_Pitch; }
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; };
 	FORCEINLINE UCameraComponent* GetFollowCamera()const { return FollowCamera; }
+	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; }
 
 	AWeapon* GetEquippedWeapon();
 

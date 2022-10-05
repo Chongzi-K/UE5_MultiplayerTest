@@ -88,11 +88,20 @@ void AMainCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	AimOffset(DeltaTime);
-
+	if (GetLocalRole() > ENetRole::ROLE_SimulatedProxy&&IsLocallyControlled())//枚举值可以比较，靠后的大
+	{
+		AimOffset(DeltaTime);
+	}
+	else
+	{
+		TimeSinceLastMovementReplication += DeltaTime;
+		if (TimeSinceLastMovementReplication > 0.25f)//0.25s未复制运动则启用一次复制响应
+		{
+			OnRep_ReplicatedMovement();
+		}
+		CaculateAimOffset_Pitch();
+	}
 	HideCamerIfCharacterClose();
-
-
 }
 
 void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -279,16 +288,21 @@ bool AMainCharacter::IsAiming()
 	return(CombatComponent && CombatComponent->bAiming);
 }
 
+float AMainCharacter::CaculateSpeed()
+{
+	FVector Velocity = GetVelocity();
+	Velocity.Z = 0.f;
+	return Velocity.Size();
+}
+
 void AMainCharacter::AimOffset(float DeltaTime)
 {
 	if (CombatComponent && CombatComponent->EquippedWeapon == nullptr) { return; }
-	FVector Velocity = GetVelocity();
-	Velocity.Z = 0.f;
-	float Speed = Velocity.Size();
 	bool bIsInAir = GetCharacterMovement()->IsFalling();
-
+	float Speed = CaculateSpeed();
 	if (Speed == 0.0f && !bIsInAir)//站立，不跳
 	{
+		bRotateRootBone = true;
 		FRotator CurrentAimRotation = FRotator(0.0f, GetBaseAimRotation().Yaw, 0.0f);
 		FRotator DeltaAimRotation = UKismetMathLibrary::NormalizedDeltaRotator(CurrentAimRotation, StartingAimRotation);
 		AimOffset_Yaw = DeltaAimRotation.Yaw;
@@ -301,23 +315,52 @@ void AMainCharacter::AimOffset(float DeltaTime)
 	}
 	if (Speed > 0.0f || bIsInAir)//跑或跳
 	{
+		bRotateRootBone = false;
 		StartingAimRotation = FRotator(0.0f, GetBaseAimRotation().Yaw,0.0f);
 		AimOffset_Yaw = 0.0f;
 		bUseControllerRotationYaw = true;
 		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 	}
 
-	AimOffset_Pitch = GetBaseAimRotation().Pitch;
-	//CharacterMovementComponent->GetPackedAngles()中 把 Rotation 压缩到 5 bytes
-    // CompressAxisToShort(float Angle){return FMath::RoundToInt(Angle*65536.f/360.f)&0xFFFf;}
-    //Rotation 发送时从 float 压缩成了 int ，接收时恢复为 float
-    //负值在压缩解压后会变为正值
-	if (AimOffset_Pitch > 90.0f && !IsLocallyControlled())
+	CaculateAimOffset_Pitch();
+
+}
+
+void AMainCharacter::SimulateProxiesTurn()
+{
+	if (CombatComponent == nullptr || CombatComponent->EquippedWeapon == nullptr) { return; }
+
+	bRotateRootBone = false;
+
+	float Speed = CaculateSpeed();	
+	if (Speed > 0.0f)
 	{
-		//把 Pitch 从 [270，360）映射到[-90，0）
-		FVector2D InRange(270.0f, 360.0f);
-		FVector2D OutRange(-90.0f, 0.0f);
-		AimOffset_Yaw = FMath::GetMappedRangeValueClamped(InRange, OutRange,AimOffset_Pitch);
+		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+		return;
+	}
+
+	ProxyRotationLastFrame = ProxyRotationThisFrame;
+	ProxyRotationThisFrame = GetActorRotation();
+	ProxyYaw = UKismetMathLibrary::NormalizedDeltaRotator(ProxyRotationThisFrame,ProxyRotationLastFrame).Yaw;
+	if (FMath::Abs(ProxyYaw)>TurnThreshold)
+	{
+		if (ProxyYaw > TurnThreshold)
+		{
+			TurningInPlace = ETurningInPlace::ETIP_Right;
+		}
+		else if (ProxyYaw < -TurnThreshold)
+		{
+			TurningInPlace = ETurningInPlace::ETIP_Left;
+		}
+		else
+		{
+			TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+		}
+		return;
+	}
+	else
+	{
+		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 	}
 }
 
@@ -392,6 +435,13 @@ void AMainCharacter::PlayFireMontage(bool bAiming)
 	}
 }
 
+void AMainCharacter::OnRep_ReplicatedMovement()
+{
+	Super::OnRep_ReplicatedMovement();
+	SimulateProxiesTurn();
+	TimeSinceLastMovementReplication = 0.0f;
+}
+
 void AMainCharacter::PlayHitReactMontage()
 {
 	if (CombatComponent == nullptr || CombatComponent->EquippedWeapon == nullptr) { return; }
@@ -410,4 +460,20 @@ FVector AMainCharacter::GetHitTarget()const
 {
 	if (CombatComponent == nullptr) { return FVector(); }
 	return CombatComponent->HitTarget;
+}
+
+void AMainCharacter::CaculateAimOffset_Pitch()
+{
+		AimOffset_Pitch = GetBaseAimRotation().Pitch;
+		//CharacterMovementComponent->GetPackedAngles()中 把 Rotation 压缩到 5 bytes
+			// CompressAxisToShort(float Angle){return FMath::RoundToInt(Angle*65536.f/360.f)&0xFFFf;}
+			//Rotation 发送时从 float 压缩成了 int ，接收时恢复为 float
+			//负值在压缩解压后会变为正值
+		if (AimOffset_Pitch > 90.0f && !IsLocallyControlled())
+		{
+			//把 Pitch 从 [270，360）映射到[-90，0）
+			FVector2D InRange(270.0f, 360.0f);
+			FVector2D OutRange(-90.0f, 0.0f);
+			AimOffset_Yaw = FMath::GetMappedRangeValueClamped(InRange, OutRange, AimOffset_Pitch);
+		}
 }
