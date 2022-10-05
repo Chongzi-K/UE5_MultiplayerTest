@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "MultiplayerProject/HUD/MainHUD.h"
 #include "CombatComponent.generated.h"
 
 
@@ -81,6 +82,8 @@ private:
 	float CrosshairShootingFactor;
 
 	FVector HitTarget;
+
+	FHUDPackage HUDPackage;
 
 	//
 	//瞄准与视角拉进拉远

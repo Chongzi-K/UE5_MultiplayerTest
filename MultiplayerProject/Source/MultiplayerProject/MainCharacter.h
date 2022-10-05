@@ -5,11 +5,12 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "MultiplayerProject/Types/TurningInPlace.h"
+#include "MultiplayerProject/Interfaces/InteractWithCrosshairsInterface.h"
 #include "MainCharacter.generated.h"
 
 
 UCLASS()
-class MULTIPLAYERPROJECT_API AMainCharacter : public ACharacter
+class MULTIPLAYERPROJECT_API AMainCharacter : public ACharacter,public IInteractWithCrosshairsInterface
 {
 	GENERATED_BODY()
 
