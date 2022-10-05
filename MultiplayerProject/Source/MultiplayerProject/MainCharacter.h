@@ -111,6 +111,20 @@ private:
 	float CaculateSpeed();
 
 
+	/**
+	 *  Íæ¼ÒÐÅÏ¢
+	 */
+	UPROPERTY(EditAnywhere, Category = "Player Stats")
+	float MaxHealth = 100.0f;
+
+	UPROPERTY(ReplicatedUsing= OnRep_Health, VisibleAnywhere, Category = "Player Stats")
+	float Health;
+
+	UFUNCTION()
+	void OnRep_Health();
+
+	class AMainPlayerController* MainPlyerController;
+
 public:
 
 	void SetOverlappingWeapon(AWeapon* Weapon);

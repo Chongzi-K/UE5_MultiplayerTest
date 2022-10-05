@@ -150,6 +150,22 @@ void UCombatComponent::Fire()
 	}
 }
 
+void UCombatComponent::StartFireTimer()
+{
+	if (EquippedWeapon == nullptr || MainCharacter == nullptr) { return; }
+	MainCharacter->GetWorldTimerManager().SetTimer(FireTimer, this, &UCombatComponent::FireTimerFinished, EquippedWeapon->FireDelay);
+}
+
+void UCombatComponent::FireTimerFinished()
+{
+	if (EquippedWeapon == nullptr) { return; }
+	bCanFire = true;
+	if (bFireButtonPressed && EquippedWeapon->bAutomaticWeapon)
+	{
+		Fire();
+	}
+}
+
 void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 {
 	FVector2D ViewportSize;
@@ -293,21 +309,7 @@ void UCombatComponent::InterpFOV(float DeltaTime)
 	}
 }
 
-void UCombatComponent::StartFireTimer()
-{
-	if (EquippedWeapon == nullptr || MainCharacter==nullptr) { return; }
-	MainCharacter->GetWorldTimerManager().SetTimer(FireTimer, this, &UCombatComponent::FireTimerFinished, EquippedWeapon->FireDelay);
-}
 
-void UCombatComponent::FireTimerFinished()
-{
-	if (EquippedWeapon == nullptr) { return; }
-	bCanFire = true;
-	if (bFireButtonPressed && EquippedWeapon->bAutomaticWeapon)
-	{
-		Fire();
-	}
-}
 
 
 

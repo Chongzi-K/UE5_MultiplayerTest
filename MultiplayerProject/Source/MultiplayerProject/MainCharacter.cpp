@@ -13,6 +13,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "MainAnimInstance.h"
 #include "MultiplayerProject/MultiplayerProject.h"
+#include "MultiplayerProject/MainPlayerController/MainPlayerController.h"
 
 
 
@@ -73,7 +74,7 @@ void AMainCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 
 	//绑定后，当服务器上这个值发生改变，才会复制到所有客户端上；而不是每帧每tick去修改
 	DOREPLIFETIME_CONDITION(AMainCharacter, OverlappingWeapon, COND_OwnerOnly);//COND_OwnerOnly：只复制给实例所在的客户端
-	//DOREPLIFETIME(AMainCharacter, Health);
+	DOREPLIFETIME(AMainCharacter, Health);
 	//DOREPLIFETIME(AMainCharacter, Shield);
 	//DOREPLIFETIME(AMainCharacter, bDisableGameplay);
 } 
@@ -81,6 +82,12 @@ void AMainCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 void AMainCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	MainPlyerController = Cast<AMainPlayerController>(Controller);
+	if (MainPlyerController)
+	{
+		MainPlyerController->SetHUDHealth(Health, MaxHealth);
+	}
 	
 }
 
@@ -240,6 +247,11 @@ void AMainCharacter::HideCamerIfCharacterClose()
 			CombatComponent->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = false;
 		}
 	}
+}
+
+void AMainCharacter::OnRep_Health()
+{
+
 }
 
 //该函数只会在服务器被调用，因为只有服务器才开启了触发重叠事件
