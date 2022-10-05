@@ -476,8 +476,13 @@ void AMainCharacter::OnRep_ReplicatedMovement()
 void AMainCharacter::Elim()
 {
 	//由 GameMode 调用
+	if (CombatComponent && CombatComponent->EquippedWeapon)
+	{
+		CombatComponent->EquippedWeapon->Dropped();
+	}
 	MulticastElim();
 	GetWorldTimerManager().SetTimer(ElimTimer, this, &AMainCharacter::ElimTimerFinish, ElimDelay);
+
 }
 
 void AMainCharacter::ElimTimerFinish()
@@ -493,6 +498,16 @@ void AMainCharacter::MulticastElim_Implementation()
 {
 	bElimmed = true;
 	PlayElimMontage();
+
+	//禁用所有操作
+	GetCharacterMovement()->DisableMovement();
+	GetCharacterMovement()->StopMovementImmediately();
+	if (MainPlyerController)
+	{
+		DisableInput(MainPlyerController);
+	}
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void AMainCharacter::PlayHitReactMontage()
