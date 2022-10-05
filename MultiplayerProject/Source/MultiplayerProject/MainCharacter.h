@@ -34,6 +34,8 @@ public:
 
 	virtual void OnRep_ReplicatedMovement()override;
 
+	//±ªÃ‘Ã≠
+	void Elim();
 
 protected:
 

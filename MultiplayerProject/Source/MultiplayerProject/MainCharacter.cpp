@@ -14,7 +14,7 @@
 #include "MainAnimInstance.h"
 #include "MultiplayerProject/MultiplayerProject.h"
 #include "MultiplayerProject/MainPlayerController/MainPlayerController.h"
-
+#include "MultiplayerProject/GameMode/MainGameMode.h"
 
 
 
@@ -222,12 +222,6 @@ void AMainCharacter::ServerEquipButtonPressed_Implementation()
 		CombatComponent->EquipWeapon(OverlappingWeapon);
 	}
 }
-
-/*void AMainCharacter::MulticastHit_Implementation()
-{
-	PlayHitReactMontage();
-}
-*/
 
 void AMainCharacter::HideCamerIfCharacterClose()
 {
@@ -469,6 +463,11 @@ void AMainCharacter::OnRep_ReplicatedMovement()
 	TimeSinceLastMovementReplication = 0.0f;
 }
 
+void AMainCharacter::Elim()
+{
+
+}
+
 void AMainCharacter::PlayHitReactMontage()
 {
 	if (CombatComponent == nullptr || CombatComponent->EquippedWeapon == nullptr) { return; }
@@ -489,6 +488,18 @@ void AMainCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDa
 	UpdateHUD_Health();
 	//负责服务端，客户端在Health的复制响应函数调用
 	PlayHitReactMontage();
+	if (Health == 0.0f)
+	{
+		//在服务端上才能获取到GameMode,客户端会返回空指针
+		AMainGameMode* MainGameMode = GetWorld()->GetAuthGameMode<AMainGameMode>();
+		if (MainGameMode)
+		{
+			MainPlyerController = MainPlyerController == nullptr ? Cast<AMainPlayerController>(Controller) : MainPlyerController;
+			AMainPlayerController* AttackerController = Cast<AMainPlayerController>(InstigatorController);
+			MainGameMode->PlayerEliminated(this,MainPlyerController, AttackerController);
+		}
+	}
+
 }
 
 FVector AMainCharacter::GetHitTarget()const
