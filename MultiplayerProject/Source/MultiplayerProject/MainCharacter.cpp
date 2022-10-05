@@ -83,10 +83,12 @@ void AMainCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	MainPlyerController = Cast<AMainPlayerController>(Controller);
-	if (MainPlyerController)
+	UpdateHUD_Health();
+
+	//只在服务器上有伤害响应
+	if (HasAuthority())
 	{
-		MainPlyerController->SetHUDHealth(Health, MaxHealth);
+		OnTakeAnyDamage.AddDynamic(this, &AMainCharacter::ReceiveDamage);
 	}
 	
 }
@@ -221,10 +223,11 @@ void AMainCharacter::ServerEquipButtonPressed_Implementation()
 	}
 }
 
-void AMainCharacter::MulticastHit_Implementation()
+/*void AMainCharacter::MulticastHit_Implementation()
 {
 	PlayHitReactMontage();
 }
+*/
 
 void AMainCharacter::HideCamerIfCharacterClose()
 {
@@ -251,7 +254,19 @@ void AMainCharacter::HideCamerIfCharacterClose()
 
 void AMainCharacter::OnRep_Health()
 {
+	PlayHitReactMontage();
+	UpdateHUD_Health();
+}
 
+void AMainCharacter::UpdateHUD_Health()
+{
+	//尽量少使用cast步骤，要多次调用时使用三元运算符减少cast操作
+//MainPlyerController = Cast<AMainPlayerController>(Controller);
+	MainPlyerController = MainPlyerController == nullptr ? Cast<AMainPlayerController>(Controller) : MainPlyerController;
+	if (MainPlyerController)
+	{
+		MainPlyerController->SetHUDHealth(Health, MaxHealth);
+	}
 }
 
 //该函数只会在服务器被调用，因为只有服务器才开启了触发重叠事件
@@ -466,6 +481,14 @@ void AMainCharacter::PlayHitReactMontage()
 
 		AnimInstance->Montage_JumpToSection(SectionName);
 	}
+}
+
+void AMainCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController,AActor* DamageCauser)
+{
+	Health = FMath::Clamp(Health - Damage, 0.0f, MaxHealth);
+	UpdateHUD_Health();
+	//负责服务端，客户端在Health的复制响应函数调用
+	PlayHitReactMontage();
 }
 
 FVector AMainCharacter::GetHitTarget()const
