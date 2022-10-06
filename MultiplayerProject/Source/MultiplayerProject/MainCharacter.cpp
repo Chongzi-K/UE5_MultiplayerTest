@@ -114,7 +114,7 @@ void AMainCharacter::Tick(float DeltaTime)
 	}
 
 	HideCamerIfCharacterClose();
-	PollInitialize();
+	PollInitialize();//更新直到
 }
 
 void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -276,6 +276,7 @@ void AMainCharacter::PollInitialize()
 		if (MainPlayerState)
 		{
 			MainPlayerState->AddToScore(0.0f);//调用一次 Score 更新
+			MainPlayerState->AddToDefeats(0);//调用一次 Defeat 更新
 		}
 	}
 }

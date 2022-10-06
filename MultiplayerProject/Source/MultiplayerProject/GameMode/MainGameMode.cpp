@@ -18,9 +18,14 @@ void AMainGameMode::PlayerEliminated(AMainCharacter* EliminatedCharacter, AMainP
 		AttackerPlayerState->AddToScore(1.0f);
 	}
 
-	if (EliminatedCharacter)
+	if (EliminatedCharacter)//淘汰玩家
 	{
 		EliminatedCharacter->Elim();
+	}
+
+	if (VictimPlayerState)//受害者 PlayerState 中被击败数+1
+	{
+		VictimPlayerState->AddToDefeats(1);
 	}
 }
 

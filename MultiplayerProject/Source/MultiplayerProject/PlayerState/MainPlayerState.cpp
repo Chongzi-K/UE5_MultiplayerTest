@@ -4,6 +4,14 @@
 #include "MainPlayerState.h"
 #include "MultiplayerProject/MainCharacter.h"
 #include "MultiplayerProject/MainPlayerController/MainPlayerController.h"
+#include "Net/UnrealNetwork.h"
+
+void AMainPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps)const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AMainPlayerState, Defeats);
+}
 
 void AMainPlayerState::OnRep_Score()//客户端修改score
 {
@@ -15,7 +23,7 @@ void AMainPlayerState::OnRep_Score()//客户端修改score
 		MainPlayerController = MainPlayerController == nullptr ? Cast<AMainPlayerController>(MainCharacter->Controller) : MainPlayerController;
 		if (MainPlayerController)
 		{
-			MainPlayerController->SetHUDScore(Score);
+			MainPlayerController->SetHUDScore(GetScore());
 		}
 	}
 
@@ -23,7 +31,7 @@ void AMainPlayerState::OnRep_Score()//客户端修改score
 
 void AMainPlayerState::AddToScore(float ScoreAmount)//服务端修改score
 {
-	Score += ScoreAmount;
+	SetScore(GetScore() + ScoreAmount);
 	MainCharacter = MainCharacter == nullptr ? Cast<AMainCharacter>(GetPawn()) : MainCharacter;
 	if (MainCharacter)
 	{
@@ -31,6 +39,32 @@ void AMainPlayerState::AddToScore(float ScoreAmount)//服务端修改score
 		if (MainPlayerController)
 		{
 			MainPlayerController->SetHUDScore(Score);
+		}
+	}
+}
+
+void AMainPlayerState::AddToDefeats(int32 DefeatAmount)//服务器更新 Defeats 并发送复制，更新本地HUD
+{
+	Defeats += DefeatAmount;
+	MainCharacter = MainCharacter == nullptr ? Cast<AMainCharacter>(GetPawn()) : MainCharacter;
+	if (MainCharacter)
+	{
+		MainPlayerController = MainPlayerController == nullptr ? Cast<AMainPlayerController>(MainCharacter->Controller) : MainPlayerController;
+		if (MainPlayerController)
+		{
+			MainPlayerController->SetHUDDefeat(Defeats);
+		}
+	}
+}
+void AMainPlayerState::OnRep_Defeats()//客户端收到复制后更新HUD
+{
+	MainCharacter = MainCharacter == nullptr ? Cast<AMainCharacter>(GetPawn()) : MainCharacter;
+	if (MainCharacter)
+	{
+		MainPlayerController = MainPlayerController == nullptr ? Cast<AMainPlayerController>(MainCharacter->Controller) : MainPlayerController;
+		if (MainPlayerController)
+		{
+			MainPlayerController->SetHUDDefeat(Defeats);
 		}
 	}
 }

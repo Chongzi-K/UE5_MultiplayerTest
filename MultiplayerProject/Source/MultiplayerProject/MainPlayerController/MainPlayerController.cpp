@@ -43,6 +43,19 @@ void AMainPlayerController::SetHUDScore(float Score)
 	}
 }
 
+void AMainPlayerController::SetHUDDefeat(int32 Defeat)
+{
+	MainHUD = MainHUD == nullptr ? Cast<AMainHUD>(GetHUD()) : MainHUD;
+	if (MainHUD && MainHUD->CharacterOverlay)
+	{
+		if (MainHUD->CharacterOverlay->DefeatAmountTextBlock)
+		{
+			FString DefeatText = FString::Printf(TEXT("%d"), Defeat);
+			MainHUD->CharacterOverlay->DefeatAmountTextBlock->SetText(FText::FromString(DefeatText));
+		}
+	}
+}
+
 void  AMainPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);

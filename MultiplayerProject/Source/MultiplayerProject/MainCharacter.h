@@ -134,6 +134,7 @@ private:
 	UFUNCTION()
 	void OnRep_Health();
 
+	UPROPERTY()
 	class AMainPlayerController* MainPlyerController;
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
@@ -141,6 +142,7 @@ private:
 
 	bool bElimmed = false;
 
+	UPROPERTY()
 	class AMainPlayerState* MainPlayerState;
 
 public:

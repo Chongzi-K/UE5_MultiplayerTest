@@ -18,6 +18,7 @@ public:
 
 	void SetHUDHealth(float Health, float MaxHealth);
 	void SetHUDScore(float Score);
+	void SetHUDDefeat(int32 Defeat);
 	virtual void OnPossess(APawn* InPawn)override;
 
 protected:
@@ -26,6 +27,7 @@ protected:
 
 
 private:
+	UPROPERTY()
 	class AMainHUD* MainHUD;
 
 	

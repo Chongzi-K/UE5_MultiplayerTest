@@ -61,7 +61,11 @@ private:
 	UPROPERTY()
 	class AMainCharacter* MainCharacter;
 
+
+	UPROPERTY()
 	class AMainPlayerController* Controller;
+
+	UPROPERTY()
 	class AMainHUD* HUD;
 
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
@@ -85,6 +89,7 @@ private:
 
 	FVector HitTarget;
 
+	UPROPERTY()
 	FHUDPackage HUDPackage;
 
 	//
