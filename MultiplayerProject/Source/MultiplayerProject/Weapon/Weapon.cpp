@@ -10,6 +10,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Casing.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "MultiplayerProject/MainPlayerController/MainPlayerController.h"
 
 // Sets default values
 AWeapon::AWeapon()
@@ -67,6 +68,7 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AWeapon, WeaponState);
+	DOREPLIFETIME(AWeapon, CurrentAmmo);
 }
 
 void AWeapon::ShowPickupWidget(bool bShowWidget)
@@ -99,6 +101,45 @@ void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	
 		MainCharacter->SetOverlappingWeapon(nullptr);
 	}
+}
+
+void AWeapon::OnRep_CurrentAmmo()
+{
+	SetHUDAmmo();
+}
+
+void AWeapon::OnRep_Owner()
+{
+	Super::OnRep_Owner();
+	if (Owner == nullptr)//Óë Dropped Ë«±£ÏÕ
+	{
+		MainOwnerCharacter = nullptr;
+		MainOwnerController = nullptr;
+	}
+	else
+	{
+		SetHUDAmmo();
+	}
+
+}
+
+void AWeapon::SetHUDAmmo()
+{
+	MainOwnerCharacter = MainOwnerCharacter == nullptr ? Cast<AMainCharacter>(GetOwner()) : MainOwnerCharacter;
+	if (MainOwnerCharacter)
+	{
+		MainOwnerController = MainOwnerController == nullptr ? Cast<AMainPlayerController>(MainOwnerCharacter->Controller) : MainOwnerController;
+		if (MainOwnerController)
+		{
+			MainOwnerController->SetHUDWeaponAmmo(CurrentAmmo);
+		}
+	}
+}
+
+void AWeapon::SpendRound()
+{
+	--CurrentAmmo;//´¥·¢OnRep_OnRep_CurrentAmmo
+	SetHUDAmmo();
 }
 
 void AWeapon::SetWeaponState(EWeaponState StateToSet)
@@ -170,6 +211,7 @@ void AWeapon::Fire(const FVector& HitTarget)
 
 		}
 	}
+	SpendRound();//´¥·¢µ¯Ò©¼õÉÙ
 }
 
 void AWeapon::Dropped()
@@ -180,4 +222,6 @@ void AWeapon::Dropped()
 	//Íæ¼ÒËÀÍö•r·ÖëxÎäÆ÷
 	WeaponMesh->DetachFromComponent(DetachmentRules);
 	SetOwner(nullptr);
+	MainOwnerCharacter = nullptr;
+	MainOwnerController = nullptr;
 }

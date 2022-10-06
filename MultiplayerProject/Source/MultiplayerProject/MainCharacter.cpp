@@ -513,6 +513,11 @@ void AMainCharacter::ElimTimerFinish()
 
 void AMainCharacter::MulticastElim_Implementation()
 {
+	if (MainPlyerController)
+	{
+		//±»»÷µ¹ºóË¢ÐÂ Ammo HUD
+		MainPlyerController->SetHUDWeaponAmmo(0);
+	}
 	bElimmed = true;
 	PlayElimMontage();
 

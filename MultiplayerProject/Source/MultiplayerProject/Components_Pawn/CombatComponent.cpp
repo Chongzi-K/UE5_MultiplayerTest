@@ -73,6 +73,11 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 {
 	if (MainCharacter==nullptr||WeaponToEquip==nullptr) { return; }
 
+	if (EquippedWeapon)//已有装备武器
+	{
+		EquippedWeapon->Dropped();
+	}
+
 	EquippedWeapon = WeaponToEquip;
 	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
 	const USkeletalMeshSocket* RightHandSocket = MainCharacter->GetMesh()->GetSocketByName(FName("RightHandSocket"));
@@ -81,6 +86,7 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 		RightHandSocket->AttachActor(EquippedWeapon, MainCharacter->GetMesh());
 	}
 	EquippedWeapon->SetOwner(MainCharacter);
+	EquippedWeapon->SetHUDAmmo();
 	//SetOwner的参数Owner已经开启了复制，并且还有函数 OnRep_Owner()
 	MainCharacter->GetCharacterMovement()->bOrientRotationToMovement = false;
 	MainCharacter->bUseControllerRotationYaw = true;

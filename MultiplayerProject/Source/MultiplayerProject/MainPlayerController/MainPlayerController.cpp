@@ -56,6 +56,19 @@ void AMainPlayerController::SetHUDDefeat(int32 Defeat)
 	}
 }
 
+void AMainPlayerController::SetHUDWeaponAmmo(int32 Ammo)
+{
+	MainHUD = MainHUD == nullptr ? Cast<AMainHUD>(GetHUD()) : MainHUD;
+	if (MainHUD && MainHUD->CharacterOverlay)
+	{
+		if (MainHUD->CharacterOverlay->WeaponAmmoAmountTextBlock)
+		{
+			FString AmmoText = FString::Printf(TEXT("%d"), Ammo);
+			MainHUD->CharacterOverlay->DefeatAmountTextBlock->SetText(FText::FromString(AmmoText));
+		}
+	}
+}
+
 void  AMainPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);

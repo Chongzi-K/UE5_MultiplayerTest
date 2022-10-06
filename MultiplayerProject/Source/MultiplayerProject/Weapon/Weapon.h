@@ -37,6 +37,10 @@ public:
 
 	void Dropped();
 
+	virtual void OnRep_Owner()override;
+
+	void SetHUDAmmo();
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -79,6 +83,23 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ACasing> CasingClass;
+
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_CurrentAmmo)
+	int32 CurrentAmmo = 15;//当前子弹数
+
+	UFUNCTION()
+	void OnRep_CurrentAmmo();
+
+	UPROPERTY(EditAnywhere)
+	int32 MagCapacity;//弹匣容量
+
+	void SpendRound();//开枪后更新子弹数和使用者的HUD
+
+	UPROPERTY()
+	class AMainCharacter* MainOwnerCharacter;
+
+	UPROPERTY()
+	class AMainPlayerController* MainOwnerController;
 
 public:
 
