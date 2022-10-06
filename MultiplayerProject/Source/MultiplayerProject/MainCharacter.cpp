@@ -16,6 +16,7 @@
 #include "MultiplayerProject/MainPlayerController/MainPlayerController.h"
 #include "MultiplayerProject/GameMode/MainGameMode.h"
 #include "TimerManager.h"
+#include "MultiplayerProject/PlayerState/MainPlayerState.h"
 
 
 AMainCharacter::AMainCharacter()
@@ -111,7 +112,9 @@ void AMainCharacter::Tick(float DeltaTime)
 		}
 		CaculateAimOffset_Pitch();
 	}
+
 	HideCamerIfCharacterClose();
+	PollInitialize();
 }
 
 void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -261,6 +264,19 @@ void AMainCharacter::UpdateHUD_Health()
 	if (MainPlyerController)
 	{
 		MainPlyerController->SetHUDHealth(Health, MaxHealth);
+	}
+}
+
+void AMainCharacter::PollInitialize()
+{
+	if (MainPlyerController == nullptr) 
+	{
+		//在BeginPlay的第一帧会为null，一直检测到 MainPlayerState 不为 nullptr
+		MainPlayerState = GetPlayerState<AMainPlayerState>();
+		if (MainPlayerState)
+		{
+			MainPlayerState->AddToScore(0.0f);//调用一次 Score 更新
+		}
 	}
 }
 

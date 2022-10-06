@@ -6,6 +6,7 @@
 #include "MultiplayerProject/HUD/CharacterOverlay.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
+#include "MultiplayerProject/MainCharacter.h"
 
 void AMainPlayerController::BeginPlay()
 {
@@ -26,5 +27,29 @@ void AMainPlayerController::SetHUDHealth(float Health, float MaxHealth)
 			FString HealthText = FString::Printf(TEXT("%d / %d"), FMath::CeilToInt(Health), FMath::CeilToInt(MaxHealth));
 			MainHUD->CharacterOverlay->HealthTextBlock->SetText(FText::FromString(HealthText));
 		}
+	}
+}
+
+void AMainPlayerController::SetHUDScore(float Score)
+{
+	MainHUD = MainHUD == nullptr ? Cast<AMainHUD>(GetHUD()) : MainHUD;
+	if (MainHUD && MainHUD->CharacterOverlay)
+	{
+		if (MainHUD->CharacterOverlay->ScoreAmountTextBlock)
+		{
+			FString ScoreText = FString::Printf(TEXT("%d"), FMath::FloorToInt(Score));
+			MainHUD->CharacterOverlay->ScoreAmountTextBlock->SetText(FText::FromString(ScoreText));
+		}
+	}
+}
+
+void  AMainPlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+
+	AMainCharacter* MainCharacter = Cast<AMainCharacter>(InPawn);
+	if (MainCharacter)
+	{
+		SetHUDHealth(MainCharacter->GetHealth(), MainCharacter->GetMaxHealth());
 	}
 }

@@ -66,7 +66,8 @@ protected:
 	
 	void UpdateHUD_Health();
 
-
+	//判断相关类是否有效并初始化HUD
+	void PollInitialize();
 private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
@@ -140,6 +141,8 @@ private:
 
 	bool bElimmed = false;
 
+	class AMainPlayerState* MainPlayerState;
+
 public:
 
 	void SetOverlappingWeapon(AWeapon* Weapon);
@@ -152,6 +155,9 @@ public:
 	FORCEINLINE UCameraComponent* GetFollowCamera()const { return FollowCamera; }
 	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; }
 	FORCEINLINE bool IsElimmed()const { return bElimmed; }
+	FORCEINLINE float GetHealth()const { return Health; }
+	FORCEINLINE float GetMaxHealth()const { return MaxHealth; }
+
 
 	AWeapon* GetEquippedWeapon();
 
