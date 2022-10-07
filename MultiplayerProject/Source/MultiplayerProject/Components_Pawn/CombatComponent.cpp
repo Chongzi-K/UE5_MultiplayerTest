@@ -104,6 +104,12 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	{
 		Controller->SetHUDCarriedAmmo(CarriedAmmo);
     }
+
+	if (EquippedWeapon->IsAmmoExhausted())//捡起武器时若弹药用尽自动 R
+	{
+		Reload();
+	}
+
 	//SetOwner的参数Owner已经开启了复制，并且还有函数 OnRep_Owner()
 	MainCharacter->GetCharacterMovement()->bOrientRotationToMovement = false;
 	MainCharacter->bUseControllerRotationYaw = true;
@@ -264,6 +270,10 @@ void UCombatComponent::FireTimerFinished()
 	if (bFireButtonPressed && EquippedWeapon->bAutomaticWeapon)
 	{
 		Fire();
+	} 
+	if (EquippedWeapon->IsAmmoExhausted())//弹药用尽自动 R
+	{
+		Reload();
 	}
 }
 
