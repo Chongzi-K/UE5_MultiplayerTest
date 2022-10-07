@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "MultiplayerProject/HUD/MainHUD.h"
+#include "MultiplayerProject/Weapon/WeaponTypes.h"
 #include "CombatComponent.generated.h"
 
 
@@ -27,6 +28,8 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 
 	void EquipWeapon(class AWeapon* WeaponToEquip);
+
+	void Reload();
 
 protected:
 
@@ -116,5 +119,22 @@ private:
 
 	void StartFireTimer();
 	void FireTimerFinished();
+
+	bool CanFire();
+
+	//当前装备的武器对应的弹药，而不是所有的弹药
+	UPROPERTY(ReplicatedUsing= OnRep_CarriedAmmo)
+	int32 CarriedAmmo;
+
+	UFUNCTION()
+	void OnRep_CarriedAmmo();
+
+	//Map 不支持复制，因为哈希的结果在服务器和客户端上不一定相同
+	TMap<EWeaponType, int32>CarriedAmmoMap;
+
+	UPROPERTY(EditAnywhere)
+	int32 StartingARAmmo = 30;
+
+	void InitializeCarriedAmmo();
 
 };

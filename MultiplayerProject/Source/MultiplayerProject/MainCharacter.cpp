@@ -133,7 +133,7 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAction("Aim", IE_Released, this, &AMainCharacter::AimButtonReleased);
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AMainCharacter::FireButtonPressed);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &AMainCharacter::FireButtonReleased);
-
+	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &AMainCharacter::ReloadButtonPressed);
 }
 
 void AMainCharacter::MoveForward(float Value)
@@ -200,6 +200,14 @@ void AMainCharacter::CrouchButtonPressed()
 		//需要在charactermovement中设置蹲伏半高60，移动速度100；
 		//CharacterMovement->SetCrouchedHalfHeight(60.0f);
 		Crouch();//继承自character类的bIsCrouch在这个函数里会被改变并复制
+	}
+}
+
+void AMainCharacter::ReloadButtonPressed()
+{
+	if (CombatComponent)
+	{
+		CombatComponent->Reload();
 	}
 }
 

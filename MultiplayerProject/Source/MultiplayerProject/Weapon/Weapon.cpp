@@ -138,7 +138,7 @@ void AWeapon::SetHUDAmmo()
 
 void AWeapon::SpendRound()
 {
-	--CurrentAmmo;//´¥·¢OnRep_OnRep_CurrentAmmo
+	CurrentAmmo = FMath::Clamp(CurrentAmmo - 1, 0, MagCapacity);//´¥·¢OnRep_OnRep_CurrentAmmo
 	SetHUDAmmo();
 }
 

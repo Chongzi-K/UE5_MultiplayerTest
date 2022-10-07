@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "WeaponTypes.h"
 #include "Weapon.generated.h"
 
 
@@ -101,6 +102,9 @@ private:
 	UPROPERTY()
 	class AMainPlayerController* MainOwnerController;
 
+	UPROPERTY(EditAnywhere)
+	EWeaponType WeaponType;
+
 public:
 
 	void SetWeaponState(EWeaponState  StateToSet);
@@ -108,7 +112,8 @@ public:
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
 	FORCEINLINE float GetZoomedFOV()const { return ZoomedFOV; }
 	FORCEINLINE float GetZoomInterpSpeed()const { return ZoomedInterpSpeed; }
-
+	FORCEINLINE bool IsAmmoExhausted()const { return CurrentAmmo <= 0; }
+	FORCEINLINE EWeaponType GetWeaponType()const { return WeaponType; }
 
 public:
 	//

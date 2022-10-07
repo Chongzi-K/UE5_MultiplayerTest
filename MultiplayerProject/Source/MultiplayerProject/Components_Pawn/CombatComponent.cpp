@@ -38,7 +38,10 @@ void UCombatComponent::BeginPlay()
 		{
 			DefaultFOV = MainCharacter->GetFollowCamera()->FieldOfView;
 			CurrentFOV = DefaultFOV;
-			
+		}
+		if (MainCharacter->HasAuthority())
+		{
+			InitializeCarriedAmmo();
 		}
 	}
 	
@@ -67,6 +70,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME(UCombatComponent, EquippedWeapon);
 	DOREPLIFETIME(UCombatComponent, bAiming);
+	DOREPLIFETIME_CONDITION(UCombatComponent, CarriedAmmo,COND_OwnerOnly);//对其他客户端来说没意义，所以只复制到实例对应的客户端
 }
 
 void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
@@ -87,10 +91,26 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	}
 	EquippedWeapon->SetOwner(MainCharacter);
 	EquippedWeapon->SetHUDAmmo();
+
+	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))//Key=武器类型，查询int32 子弹数量
+	{
+		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
+	}
+
+	Controller = Controller == nullptr ? Cast<AMainPlayerController>(MainCharacter->Controller) : Controller;
+	if (Controller)
+	{
+		Controller->SetHUDCarriedAmmo(CarriedAmmo);
+    }
 	//SetOwner的参数Owner已经开启了复制，并且还有函数 OnRep_Owner()
 	MainCharacter->GetCharacterMovement()->bOrientRotationToMovement = false;
 	MainCharacter->bUseControllerRotationYaw = true;
 
+
+}
+
+void UCombatComponent::Reload()
+{
 
 }
 
@@ -139,20 +159,6 @@ void UCombatComponent::FireButtonPressed(bool bPressed)
 	if (bFireButtonPressed)
 	{
 		Fire();
-	}
-}
-
-void UCombatComponent::Fire()
-{
-	if (bCanFire)
-	{
-		bCanFire = false;
-		ServerFire(HitTarget);
-		if (EquippedWeapon)
-		{
-			CrosshairShootingFactor = 0.8f;
-		}
-		StartFireTimer();
 	}
 }
 
@@ -282,6 +288,25 @@ void UCombatComponent::SetHUDCrosshairs(float DeltaTime)
 	}
 }
 
+void UCombatComponent::Fire()
+{
+	if (CanFire())
+	{
+		bCanFire = false;
+		ServerFire(HitTarget);
+		if (EquippedWeapon)
+		{
+			CrosshairShootingFactor = 0.8f;
+		}
+		StartFireTimer();
+	}
+}
+
+void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
+{
+	MulticastFire(TraceHitTarget);
+}
+
 void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
 {
 	if (EquippedWeapon == nullptr) { return; }
@@ -291,11 +316,6 @@ void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& T
 		MainCharacter->PlayFireMontage(bAiming);
 		EquippedWeapon->Fire(TraceHitTarget);
 	}
-}
-
-void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
-{
-	MulticastFire(TraceHitTarget);
 }
 
 void UCombatComponent::InterpFOV(float DeltaTime)
@@ -315,7 +335,25 @@ void UCombatComponent::InterpFOV(float DeltaTime)
 	}
 }
 
+bool UCombatComponent::CanFire()
+{
+	if (EquippedWeapon == nullptr) { return false; }
+	return !EquippedWeapon->IsAmmoExhausted() || !bCanFire;
+}
 
+void UCombatComponent::OnRep_CarriedAmmo()
+{
+	//客户端也要有一个图，而不是靠复制
+	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))//Key=武器类型，查询int32 子弹数量
+	{
+		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
+	}
+}
+
+void UCombatComponent::InitializeCarriedAmmo()
+{
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_AssaultRifle, StartingARAmmo);
+}
 
 
 
