@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "MultiplayerProject/HUD/MainHUD.h"
 #include "MultiplayerProject/Weapon/WeaponTypes.h"
+#include "MultiplayerProject/Types/CombatState.h"
 #include "CombatComponent.generated.h"
 
 
@@ -30,6 +31,9 @@ public:
 	void EquipWeapon(class AWeapon* WeaponToEquip);
 
 	void Reload();
+
+	UFUNCTION(BlueprintCallable)
+	void FinishReloading();
 
 protected:
 
@@ -58,6 +62,11 @@ protected:
 
 	void SetHUDCrosshairs(float DeltaTime);
 
+	UFUNCTION(Server,Reliable)
+	void SeverReload();
+
+	void HandleReload();//处理客户端服务端上的 Reload
+	int32 AmountToReload();
 
 private:
 
@@ -136,5 +145,13 @@ private:
 	int32 StartingARAmmo = 30;
 
 	void InitializeCarriedAmmo();
+
+	UPROPERTY(ReplicatedUsing = OnRep_CombatState)
+	ECombatState CombatState = ECombatState::ECS_Unoccupied;
+
+	UFUNCTION()
+	void OnRep_CombatState();
+
+	void UpdateAmmoAmount();
 
 };

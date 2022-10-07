@@ -42,6 +42,8 @@ public:
 
 	void SetHUDAmmo();
 
+	void AddAmmo(int32 AmmoAmountToAdd);
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -114,6 +116,8 @@ public:
 	FORCEINLINE float GetZoomInterpSpeed()const { return ZoomedInterpSpeed; }
 	FORCEINLINE bool IsAmmoExhausted()const { return CurrentAmmo <= 0; }
 	FORCEINLINE EWeaponType GetWeaponType()const { return WeaponType; }
+	FORCEINLINE int32 GetCurrentAmmo()const { return CurrentAmmo; }
+	FORCEINLINE int32 GetMagCapacity()const { return MagCapacity; }
 
 public:
 	//

@@ -71,6 +71,8 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(UCombatComponent, EquippedWeapon);
 	DOREPLIFETIME(UCombatComponent, bAiming);
 	DOREPLIFETIME_CONDITION(UCombatComponent, CarriedAmmo,COND_OwnerOnly);//对其他客户端来说没意义，所以只复制到实例对应的客户端
+	DOREPLIFETIME(UCombatComponent, CombatState);
+
 }
 
 void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
@@ -111,7 +113,94 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 void UCombatComponent::Reload()
 {
+	if (CarriedAmmo > 0&&CombatState!=ECombatState::ECS_Reloading)//AmmoMap在客户端，有客户端判定子弹是否足够换弹
+	{
+		SeverReload();
+	}
+}
 
+void UCombatComponent::FinishReloading()
+{
+	if (MainCharacter == nullptr) { return; }
+	if (MainCharacter->HasAuthority())
+	{
+		CombatState = ECombatState::ECS_Unoccupied;
+		UpdateAmmoAmount();
+	}
+	if (bFireButtonPressed)
+	{
+		Fire();
+	}
+}
+
+void UCombatComponent::UpdateAmmoAmount()
+{
+	if (MainCharacter == nullptr || EquippedWeapon == nullptr) { return; }
+	int32 ReloadAmount = AmountToReload();
+	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))//更新自己携带的弹药
+	{
+		CarriedAmmoMap[EquippedWeapon->GetWeaponType()] -= ReloadAmount;
+		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
+	}
+	Controller = Controller == nullptr ? Cast<AMainPlayerController>(MainCharacter->Controller) : Controller;
+	if (Controller)
+	{
+		Controller->SetHUDCarriedAmmo(CarriedAmmo);
+	}
+	EquippedWeapon->AddAmmo(-ReloadAmount);
+}
+
+void UCombatComponent::SeverReload_Implementation()//被客户端调用的服务端响应函数-服务端处理方法
+{
+	if (MainCharacter == nullptr || EquippedWeapon == nullptr) { return; }
+
+	UpdateAmmoAmount();
+
+	CombatState = ECombatState::ECS_Reloading;
+	HandleReload();
+}
+
+void UCombatComponent::OnRep_CombatState()//客户端收到复制的处理方法
+{
+	switch (CombatState)
+	{
+	case ECombatState::ECS_Unoccupied:
+		if (bFireButtonPressed)
+		{
+			Fire();
+		}
+		break;
+	case ECombatState::ECS_Reloading:
+		HandleReload();
+		break;
+	case ECombatState::ECS_ThrowingGrenade:
+		break;
+	case ECombatState::ECS_SwappingWeapons:
+		break;
+	case ECombatState::ECS_MAX:
+		break;
+	default:
+		break;
+	}
+}
+
+void UCombatComponent::HandleReload()
+{
+	MainCharacter->PlayReloadMontage();
+}
+
+int32 UCombatComponent::AmountToReload()
+{
+	if (EquippedWeapon == nullptr) { return; }
+	int32 RoomInMag = EquippedWeapon->GetMagCapacity() - EquippedWeapon->GetCurrentAmmo();
+	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))
+	{
+		int32 AmmoCarried = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
+		int32 Least = FMath::Min(RoomInMag, AmmoCarried);
+		return FMath::Clamp(RoomInMag, 0, Least);
+	}
+	
+	return 0;
 }
 
 void UCombatComponent::SetAiming(bool bIsAiming)
@@ -311,7 +400,7 @@ void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& T
 {
 	if (EquippedWeapon == nullptr) { return; }
 
-	if (MainCharacter && bFireButtonPressed)
+	if (MainCharacter && bFireButtonPressed&&CombatState==ECombatState::ECS_Unoccupied)
 	{
 		MainCharacter->PlayFireMontage(bAiming);
 		EquippedWeapon->Fire(TraceHitTarget);
@@ -338,7 +427,7 @@ void UCombatComponent::InterpFOV(float DeltaTime)
 bool UCombatComponent::CanFire()
 {
 	if (EquippedWeapon == nullptr) { return false; }
-	return !EquippedWeapon->IsAmmoExhausted() || !bCanFire;
+	return !EquippedWeapon->IsAmmoExhausted() && !bCanFire && CombatState == ECombatState::ECS_Unoccupied;
 }
 
 void UCombatComponent::OnRep_CarriedAmmo()

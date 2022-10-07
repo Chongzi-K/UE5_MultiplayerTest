@@ -8,7 +8,7 @@
 #include "Components/WidgetComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "MultiplayerProject/Weapon/Weapon.h"
-#include "MultiplayerProject/Components_Pawn/CombatComponent.h"
+//#include "MultiplayerProject/Components_Pawn/CombatComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "MainAnimInstance.h"
@@ -17,6 +17,7 @@
 #include "MultiplayerProject/GameMode/MainGameMode.h"
 #include "TimerManager.h"
 #include "MultiplayerProject/PlayerState/MainPlayerState.h"
+#include "MultiplayerProject/Weapon/WeaponTypes.h"
 
 
 AMainCharacter::AMainCharacter()
@@ -478,6 +479,27 @@ void AMainCharacter::PlayFireMontage(bool bAiming)
 		AnimInstance->Montage_Play(FireWeaponMontage);
 		FName SectionName;
 		SectionName = bAiming ? FName("RifleAim") : FName("RifleHip");
+		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
+void AMainCharacter::PlayReloadMontage()
+{
+	if (CombatComponent == nullptr || CombatComponent->EquippedWeapon == nullptr) { return; }
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && ReloadMontage)
+	{
+		AnimInstance->Montage_Play(ReloadMontage);
+		FName SectionName;
+		switch (CombatComponent->EquippedWeapon->GetWeaponType())
+		{
+		case EWeaponType::EWT_AssaultRifle:
+			SectionName = FName("Rifle");
+			break;
+		default:
+			break;
+		}
 		AnimInstance->Montage_JumpToSection(SectionName);
 	}
 }

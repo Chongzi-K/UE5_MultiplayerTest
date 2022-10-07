@@ -6,6 +6,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "MultiplayerProject/Weapon/Weapon.h"
+#include "MultiplayerProject/Types/CombatState.h"
 
 void UMainAnimInstance::NativeInitializeAnimation()
 {
@@ -82,10 +83,16 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaTime)
 			FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(RightHandTransform.GetLocation(), RightHandTransform.GetLocation() + (RightHandTransform.GetLocation() - MainCharacter->GetHitTarget()));
 			RightHandRotation = FMath::RInterpTo(RightHandRotation, LookAtRotation, DeltaTime, 30.0f);
 		} 
-
+		/*
 		FTransform MuzzleTipTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("MuzzleFlash", ERelativeTransformSpace::RTS_World));
 		FVector MuzzleX(FRotationMatrix(MuzzleTipTransform.GetRotation().Rotator()).GetUnitAxis(EAxis::X));
 		DrawDebugLine(GetWorld(), MuzzleTipTransform.GetLocation(), MuzzleTipTransform.GetLocation() + MuzzleX * 1000.0f, FColor::Blue);
 		DrawDebugLine(GetWorld(), MuzzleTipTransform.GetLocation(), MainCharacter->GetHitTarget(), FColor::Orange);
+		 */
+
+		bUseFABRIK = MainCharacter->GetCombateState() != ECombatState::ECS_Reloading;
+	
+
+
 	}
 }

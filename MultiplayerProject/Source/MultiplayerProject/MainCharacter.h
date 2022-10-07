@@ -6,6 +6,8 @@
 #include "GameFramework/Character.h"
 #include "MultiplayerProject/Types/TurningInPlace.h"
 #include "MultiplayerProject/Interfaces/InteractWithCrosshairsInterface.h"
+#include "MultiplayerProject/Types/CombatState.h"
+#include "MultiplayerProject/Components_Pawn/CombatComponent.h"
 #include "MainCharacter.generated.h"
 
 
@@ -24,6 +26,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents()override;//初始化组件
 	void PlayFireMontage(bool bAiming);
+	void PlayReloadMontage();
 	void PlayElimMontage();
 	virtual void OnRep_ReplicatedMovement()override;
 
@@ -107,7 +110,13 @@ private:
 	class UAnimMontage* FireWeaponMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
-	class UAnimMontage* HitReactMontage;
+	UAnimMontage* HitReactMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	UAnimMontage* ElimMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	UAnimMontage* ReloadMontage;
 
 	void HideCamerIfCharacterClose();
 
@@ -138,9 +147,6 @@ private:
 	UPROPERTY()
 	class AMainPlayerController* MainPlyerController;
 
-	UPROPERTY(EditAnywhere, Category = "Combat")
-	class UAnimMontage* ElimMontage;
-
 	bool bElimmed = false;
 
 	UPROPERTY()
@@ -160,7 +166,7 @@ public:
 	FORCEINLINE bool IsElimmed()const { return bElimmed; }
 	FORCEINLINE float GetHealth()const { return Health; }
 	FORCEINLINE float GetMaxHealth()const { return MaxHealth; }
-
+	FORCEINLINE ECombatState GetCombateState() const { return CombatComponent == nullptr ? ECombatState::ECS_MAX : CombatComponent->CombatState; }
 
 	AWeapon* GetEquippedWeapon();
 
