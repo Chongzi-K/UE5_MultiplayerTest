@@ -15,6 +15,12 @@ void AMainPlayerController::BeginPlay()
 	MainHUD = Cast<AMainHUD>(GetHUD());
 }
 
+void AMainPlayerController::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	SetHUDTime();
+}
+
 void AMainPlayerController::SetHUDHealth(float Health, float MaxHealth) 
 {
 	MainHUD = MainHUD == nullptr ? Cast<AMainHUD>(GetHUD()) : MainHUD;
@@ -82,7 +88,7 @@ void AMainPlayerController::SetHUDCarriedAmmo(int32 Ammo)
 	}
 }
 
-void  AMainPlayerController::OnPossess(APawn* InPawn)
+void AMainPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
@@ -91,4 +97,29 @@ void  AMainPlayerController::OnPossess(APawn* InPawn)
 	{
 		SetHUDHealth(MainCharacter->GetHealth(), MainCharacter->GetMaxHealth());
 	}
+}
+
+void AMainPlayerController::SetHUDMatchCountDown(float CountDownTime)
+{
+	MainHUD = MainHUD == nullptr ? Cast<AMainHUD>(GetHUD()) : MainHUD;
+	if (MainHUD && MainHUD->CharacterOverlay)
+	{
+		if (MainHUD->CharacterOverlay->MatchCountDownText)
+		{
+			int32 Minutes = FMath::FloorToInt(CountDownTime / 60.0f);
+			int32 Seconds = CountDownTime - Minutes * 60;
+			FString TimeText = FString::Printf(TEXT("%02d : %02d"), Minutes, Seconds);
+			MainHUD->CharacterOverlay->MatchCountDownText->SetText(FText::FromString(TimeText));
+		}
+	}
+}
+
+void AMainPlayerController::SetHUDTime()
+{
+	uint32 SecondLeft = FMath::CeilToInt(MatchTime-GetWorld()->GetTimeSeconds());
+	if (CountDownInt != SecondLeft)//转化成整数秒，秒数变化了才修改 HUD ， 实现秒修改 HUD 的效果
+	{
+		SetHUDMatchCountDown(MatchTime - GetWorld()->GetTimeSeconds());
+	}
+	CountDownInt = SecondLeft;
 }
