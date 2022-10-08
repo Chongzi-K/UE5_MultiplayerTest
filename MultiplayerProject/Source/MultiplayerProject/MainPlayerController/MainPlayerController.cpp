@@ -19,6 +19,7 @@ void AMainPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	SetHUDTime();
+	CheckTimeSync(DeltaTime);
 }
 
 void AMainPlayerController::SetHUDHealth(float Health, float MaxHealth) 
@@ -116,10 +117,59 @@ void AMainPlayerController::SetHUDMatchCountDown(float CountDownTime)
 
 void AMainPlayerController::SetHUDTime()
 {
-	uint32 SecondLeft = FMath::CeilToInt(MatchTime-GetWorld()->GetTimeSeconds());
+	uint32 SecondLeft = FMath::CeilToInt(MatchTime-GetServerTime());
 	if (CountDownInt != SecondLeft)//转化成整数秒，秒数变化了才修改 HUD ， 实现秒修改 HUD 的效果
 	{
-		SetHUDMatchCountDown(MatchTime - GetWorld()->GetTimeSeconds());
+		SetHUDMatchCountDown(MatchTime - GetServerTime());
 	}
 	CountDownInt = SecondLeft;
+}
+
+void AMainPlayerController::ServerRequestServerTime_Implementation(float TimeOfClientRequest)
+{
+	float ServerTimeOfReceipt = GetWorld()->GetTimeSeconds();//获取服务器绝对时间
+	ClientReportServerTime(TimeOfClientRequest, ServerTimeOfReceipt);//客户端发送请求的时间，服务器收到请求的时间
+}
+
+void AMainPlayerController::ClientReportServerTime(float TimeOfClientRequest, float TimeOfServerReceivedClientRequest)
+{
+	//在客户端计算服务端时间
+
+	float RoundTripTime = GetWorld()->GetTimeSeconds() - TimeOfClientRequest;//信息从客户端→服务端→客户端所需的时间
+	float CurrentServerTime = TimeOfServerReceivedClientRequest + (0.5f * RoundTripTime);//服务器收到客户端请求的时间+半程时间=客户端计算出的服务端时间
+	ClientServerDelta = CurrentServerTime - GetWorld()->GetTimeSeconds();//双端时间差=计算出的服务端时间-客户端时间
+}
+
+float AMainPlayerController::GetServerTime()
+{
+	if (HasAuthority()) 
+	{ 
+		//服务端直接返回本地时间
+		return GetWorld()->GetTimeSeconds(); 
+	}
+	else
+	{
+		return GetWorld()->GetTimeSeconds() + ClientServerDelta;
+	}
+
+}
+
+void AMainPlayerController::ReceivedPlayer()
+{
+	Super::ReceivedPlayer();
+	if (HasAuthority())
+	{
+		ServerRequestServerTime(GetWorld()->GetTimeSeconds());//服务器调用获取本地时间并广播
+	}
+}
+
+void AMainPlayerController::CheckTimeSync(float DeltaTime)//检查是否需要更新时间
+{
+	TimeSyncRunningTime += DeltaTime;
+	if (TimeSyncRunningTime > TimeSyncFrequency && IsLocalController())
+	{
+		//当同步计时达到并且是本机则同步一次时间
+		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
+		TimeSyncRunningTime = 0.0f;
+	}
 }

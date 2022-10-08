@@ -26,11 +26,28 @@ public:
 	void SetHUDMatchCountDown(float CountDownTime);
 	virtual void OnPossess(APawn* InPawn)override;
 
+	virtual float GetServerTime();//同步服务器时间
+	virtual void ReceivedPlayer() override;//服务器接收玩家瞬间触发，在这里可以最快速进行时间同步减少误差
+
 protected:
 
 	virtual void BeginPlay()override;
 
 	void SetHUDTime();
+
+	/**
+	 * 同步时间
+	 * 因为用的是BeginPlay开始计时，所以服务端时间>客户端时间
+	 */
+	UFUNCTION(Server, Reliable)
+	void ServerRequestServerTime(float TimeOfClientRequest);//RPC,客户端调用，让服务端发送时间信息
+
+	UFUNCTION(Client, Reliable)
+	void ClientReportServerTime(float TimeOfClientRequest, float TimeOfServerReceivedClientRequest);//客户端执行，用来报告收到的服务端时间
+
+	float ClientServerDelta = 0.0f;//客户端服务端之间的时间差
+
+
 
 private:
 	UPROPERTY()
@@ -39,5 +56,10 @@ private:
 	float MatchTime = 120.0f;
 	uint32 CountDownInt = 0;
 
-	
+	UPROPERTY(EditAnywhere)
+	float TimeSyncFrequency = 5.0f;//同步时间的频率/秒；
+
+	float TimeSyncRunningTime;//距离上一次同步经过的时间
+
+	void CheckTimeSync(float DeltaTime);
 };

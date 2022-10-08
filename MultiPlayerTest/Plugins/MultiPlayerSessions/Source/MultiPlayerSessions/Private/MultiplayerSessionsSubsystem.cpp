@@ -35,7 +35,7 @@ void UMultiplayerSessionsSubsystem::CreateSession(int32 NumPublicConnections, FS
 
 	LastSessionSettings = MakeShareable(new FOnlineSessionSettings());
     //使用了OnlineSubsystem则不允许在lan上匹配，未使用则允许
-	LastSessionSettings->bIsLANMatch = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
+	LastSessionSettings->bIsLANMatch = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : true;
 	LastSessionSettings->NumPublicConnections = NumPublicConnections;//最大连接数量
 	LastSessionSettings->bAllowJoinInProgress = true;//允许在会话已被创建时加入
 	LastSessionSettings->bAllowJoinViaPresence = true;//可以通过steam加入
@@ -133,7 +133,7 @@ void UMultiplayerSessionsSubsystem::OnCreateSessionComplete(FName SessionName, b
 		//不再使用该委托，则从 OnCreateSessionCompleteDelegate_Handle 中移除 CreateSessionCompleteDelegateHandle
 		SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegateHandle);
 	}
-
+	if (GEngine) { GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, FString::Printf(TEXT("MultiplayerOnCreateSessionComplete.Broadcast(bWasSuccessful)"))); }
 	MultiplayerOnCreateSessionComplete.Broadcast(bWasSuccessful);
 }
 
