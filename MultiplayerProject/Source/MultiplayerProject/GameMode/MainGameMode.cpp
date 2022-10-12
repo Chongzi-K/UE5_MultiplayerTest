@@ -8,6 +8,47 @@
 #include "GameFramework/PlayerStart.h"
 #include "MultiplayerProject/PlayerState/MainPlayerState.h"
 
+AMainGameMode::AMainGameMode()
+{
+	bDelayedStart = true;//游戏开始的时候会进入等待模式，会生成一个可自由飞行的 pawn 给玩家，直到服务器调用 start
+}
+
+void AMainGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+
+	LevelStartingTime = GetWorld()->GetTimeSeconds();
+}
+
+void AMainGameMode::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (MatchState == MatchState::WaitingToStart)
+	{
+		CountDownTime = WarmupTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		if (CountDownTime <= 0.0f)
+		{
+			StartMatch();
+		}
+	}
+}
+
+void AMainGameMode::OnMatchStateSet()
+{
+	Super::OnMatchStateSet();
+
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
+	{
+		//使用迭代器，遍历存在的所有 controller
+		AMainPlayerController* MainPlayer = Cast<AMainPlayerController>(*It);
+		if (MainPlayer)
+		{
+			MainPlayer->OnMatchStateSet(MatchState);
+		}
+	}
+}
+
 void AMainGameMode::PlayerEliminated(AMainCharacter* EliminatedCharacter, AMainPlayerController* VictimController, AMainPlayerController* AttackerController)
 {
 	AMainPlayerState* AttackerPlayerState = AttackerController ? Cast<AMainPlayerState>(AttackerController->PlayerState) : nullptr;

@@ -7,6 +7,9 @@
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "MultiplayerProject/MainCharacter.h"
+#include "Net/UnrealNetwork.h"
+#include "MultiplayerProject/GameMode/MainGameMode.h"
+
 
 void AMainPlayerController::BeginPlay()
 {
@@ -15,11 +18,20 @@ void AMainPlayerController::BeginPlay()
 	MainHUD = Cast<AMainHUD>(GetHUD());
 }
 
+void AMainPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AMainPlayerController, MatchState);
+
+}
+
 void AMainPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	SetHUDTime();
 	CheckTimeSync(DeltaTime);
+	PollInitialize();
+	//TODO - 从 Tick 中移除 PollInitialize ，提高性能
 }
 
 void AMainPlayerController::SetHUDHealth(float Health, float MaxHealth) 
@@ -35,31 +47,47 @@ void AMainPlayerController::SetHUDHealth(float Health, float MaxHealth)
 			MainHUD->CharacterOverlay->HealthTextBlock->SetText(FText::FromString(HealthText));
 		}
 	}
+	else
+	{
+		bInitializeChrarcterOverlay = true;
+		HUD_Health = Health;
+		HUD_MaxHealth = MaxHealth;
+	}
 }
 
-void AMainPlayerController::SetHUDScore(float Score)
+void AMainPlayerController::SetHUDScore(float InScore)
 {
 	MainHUD = MainHUD == nullptr ? Cast<AMainHUD>(GetHUD()) : MainHUD;
 	if (MainHUD && MainHUD->CharacterOverlay)
 	{
 		if (MainHUD->CharacterOverlay->ScoreAmountTextBlock)
 		{
-			FString ScoreText = FString::Printf(TEXT("%d"), FMath::FloorToInt(Score));
+			FString ScoreText = FString::Printf(TEXT("%d"), FMath::FloorToInt(InScore));
 			MainHUD->CharacterOverlay->ScoreAmountTextBlock->SetText(FText::FromString(ScoreText));
 		}
 	}
+	else
+	{
+		bInitializeChrarcterOverlay = true;
+		HUD_Socre = InScore;
+	}
 }
 
-void AMainPlayerController::SetHUDDefeat(int32 Defeat)
+void AMainPlayerController::SetHUDDefeat(int32 InDefeats)
 {
 	MainHUD = MainHUD == nullptr ? Cast<AMainHUD>(GetHUD()) : MainHUD;
 	if (MainHUD && MainHUD->CharacterOverlay)
 	{
 		if (MainHUD->CharacterOverlay->DefeatAmountTextBlock)
 		{
-			FString DefeatText = FString::Printf(TEXT("%d"), Defeat);
+			FString DefeatText = FString::Printf(TEXT("%d"), InDefeats);
 			MainHUD->CharacterOverlay->DefeatAmountTextBlock->SetText(FText::FromString(DefeatText));
 		}
+	}
+	else
+	{
+		bInitializeChrarcterOverlay = true;
+		HUD_Defeats = InDefeats;
 	}
 }
 
@@ -125,6 +153,26 @@ void AMainPlayerController::SetHUDTime()
 	CountDownInt = SecondLeft;
 }
 
+void AMainPlayerController::PollInitialize()
+{
+	if (CharacterOverlay == nullptr)
+	{
+		if (MainHUD && MainHUD->CharacterOverlay)
+		{
+			CharacterOverlay = MainHUD->CharacterOverlay;
+			if (CharacterOverlay)
+			{
+				SetHUDHealth(HUD_Health, HUD_MaxHealth);
+				//OnPossese 调用 SetHUDHealth ，但此时HUD未完全初始化，
+				//导致当时获取 HUD 成功但属性设置失败，故丛中保存数据在此处重新设置
+				//此方法在tick中调用
+				SetHUDDefeat(HUD_Defeats);
+				SetHUDScore(HUD_Socre);
+			}
+		}
+	}
+}
+
 void AMainPlayerController::ServerRequestServerTime_Implementation(float TimeOfClientRequest)
 {
 	float ServerTimeOfReceipt = GetWorld()->GetTimeSeconds();//获取服务器绝对时间
@@ -171,5 +219,30 @@ void AMainPlayerController::CheckTimeSync(float DeltaTime)//检查是否需要更新时间
 		//当同步计时达到并且是本机则同步一次时间
 		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
 		TimeSyncRunningTime = 0.0f;
+	}
+}
+
+void AMainPlayerController::OnMatchStateSet(FName State)
+{
+	MatchState = State;
+	if (MatchState == MatchState::InProgress)
+	{
+		MainHUD = MainHUD == nullptr ? Cast <AMainHUD>(GetHUD()) : MainHUD;
+		if (MainHUD)
+		{
+			MainHUD->AddCharacterOverlay();
+		}
+	}
+}
+
+void AMainPlayerController::OnRep_MatchState()
+{
+	if (MatchState == MatchState::InProgress)
+	{
+		MainHUD = MainHUD == nullptr ? Cast <AMainHUD>(GetHUD()) : MainHUD;
+		if (MainHUD)
+		{
+			MainHUD->AddCharacterOverlay();
+		}
 	}
 }

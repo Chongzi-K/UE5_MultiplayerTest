@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "MultiplayerProject/HUD/CharacterOverlay.h"
 #include "MainPlayerController.generated.h"
 
 /**
@@ -29,11 +30,16 @@ public:
 	virtual float GetServerTime();//同步服务器时间
 	virtual void ReceivedPlayer() override;//服务器接收玩家瞬间触发，在这里可以最快速进行时间同步减少误差
 
+	void OnMatchStateSet(FName State);
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 protected:
 
 	virtual void BeginPlay()override;
 
 	void SetHUDTime();
+
+	void PollInitialize();
 
 	/**
 	 * 同步时间
@@ -62,4 +68,22 @@ private:
 	float TimeSyncRunningTime;//距离上一次同步经过的时间
 
 	void CheckTimeSync(float DeltaTime);
+
+	UPROPERTY(ReplicatedUsing= OnRep_MatchState)
+	FName MatchState;
+
+	UFUNCTION()
+	void OnRep_MatchState();
+
+	UPROPERTY()
+	class UCharacterOverlay* CharacterOverlay;
+
+	bool bInitializeChrarcterOverlay= false ;
+
+	float HUD_Health;
+	float HUD_MaxHealth;
+	float HUD_Socre;
+	int32 HUD_Defeats;
+
+
 };
