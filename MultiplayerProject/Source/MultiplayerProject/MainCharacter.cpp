@@ -78,8 +78,9 @@ void AMainCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	//绑定后，当服务器上这个值发生改变，才会复制到所有客户端上；而不是每帧每tick去修改
 	DOREPLIFETIME_CONDITION(AMainCharacter, OverlappingWeapon, COND_OwnerOnly);//COND_OwnerOnly：只复制给实例所在的客户端
 	DOREPLIFETIME(AMainCharacter, Health);
+
 	//DOREPLIFETIME(AMainCharacter, Shield);
-	//DOREPLIFETIME(AMainCharacter, bDisableGameplay);
+	DOREPLIFETIME(AMainCharacter, bDisableGamePlay);
 } 
 
 void AMainCharacter::BeginPlay()
@@ -98,9 +99,24 @@ void AMainCharacter::BeginPlay()
 
 void AMainCharacter::Tick(float DeltaTime)
 {
+	
 	Super::Tick(DeltaTime);
 
-	if (GetLocalRole() > ENetRole::ROLE_SimulatedProxy&&IsLocallyControlled())//枚举值可以比较，靠后的大
+	RotateInPlace(DeltaTime);
+
+	HideCamerIfCharacterClose();
+	PollInitialize();//更新直到
+}
+
+void AMainCharacter::RotateInPlace(float DeltaTime)
+{
+	if (bDisableGamePlay) 
+	{ 
+		bUseControllerRotationYaw = false;
+		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+		return; 
+	}
+	if (GetLocalRole() > ENetRole::ROLE_SimulatedProxy && IsLocallyControlled())//枚举值可以比较，靠后的大
 	{
 		AimOffset(DeltaTime);
 	}
@@ -113,9 +129,6 @@ void AMainCharacter::Tick(float DeltaTime)
 		}
 		CaculateAimOffset_Pitch();
 	}
-
-	HideCamerIfCharacterClose();
-	PollInitialize();//更新直到
 }
 
 void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -139,7 +152,7 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 void AMainCharacter::MoveForward(float Value)
 {
-
+	if (bDisableGamePlay) { return; }
 	if (Controller != nullptr && Value != 0.f)
 	{
 		//获取的是 controller 的 rotation ，而不是 character 的
@@ -153,7 +166,7 @@ void AMainCharacter::MoveForward(float Value)
 
 void AMainCharacter::MoveRight(float Value)
 {
-
+	if (bDisableGamePlay) { return; }
 	if (Controller != nullptr && Value != 0.f)
 	{
 		const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f);
@@ -175,6 +188,7 @@ void AMainCharacter::LookUp(float Value)
 
 void AMainCharacter::EquipButtonPressed()
 {
+	if (bDisableGamePlay) { return; }
 	if (CombatComponent)
 	{
 		if (HasAuthority())
@@ -192,6 +206,7 @@ void AMainCharacter::EquipButtonPressed()
 
 void AMainCharacter::CrouchButtonPressed()
 {
+	if (bDisableGamePlay) { return; }
 	if (bIsCrouched)
 	{
 		UnCrouch();
@@ -206,6 +221,7 @@ void AMainCharacter::CrouchButtonPressed()
 
 void AMainCharacter::ReloadButtonPressed()
 {
+	if (bDisableGamePlay) { return; }
 	if (CombatComponent)
 	{
 		CombatComponent->Reload();
@@ -214,6 +230,7 @@ void AMainCharacter::ReloadButtonPressed()
 
 void AMainCharacter::AimButtonPressed()
 {
+	if (bDisableGamePlay) { return; }
 	if (CombatComponent)
 	{
 		CombatComponent->SetAiming(true);
@@ -222,6 +239,7 @@ void AMainCharacter::AimButtonPressed()
 
 void AMainCharacter::AimButtonReleased()
 {
+	if (bDisableGamePlay) { return; }
 	if (CombatComponent)
 	{
 		CombatComponent->SetAiming(false);
@@ -443,6 +461,7 @@ AWeapon* AMainCharacter::GetEquippedWeapon()
 
 void AMainCharacter::Jump()
 {
+	if (bDisableGamePlay) { return; }
 	if (bIsCrouched)
 	{
 		UnCrouch();
@@ -455,6 +474,7 @@ void AMainCharacter::Jump()
 
 void AMainCharacter::FireButtonPressed()
 {
+	if (bDisableGamePlay) { return; }
 	if (CombatComponent)
 	{
 		CombatComponent->FireButtonPressed(true);
@@ -463,6 +483,7 @@ void AMainCharacter::FireButtonPressed()
 
 void AMainCharacter::FireButtonReleased()
 {
+	if (bDisableGamePlay) { return; }
 	if (CombatComponent)
 	{
 		CombatComponent->FireButtonPressed(false);
@@ -554,10 +575,14 @@ void AMainCharacter::MulticastElim_Implementation()
 	//禁用所有操作
 	GetCharacterMovement()->DisableMovement();
 	GetCharacterMovement()->StopMovementImmediately();
-	if (MainPlyerController)
-	{
-		DisableInput(MainPlyerController);
-	}
+	
+	bDisableGamePlay = true;
+	//仍然需要保留部分操作
+	//if (MainPlyerController)
+	//{
+	//	DisableInput(MainPlyerController);
+	//}
+
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
@@ -616,4 +641,14 @@ void AMainCharacter::CaculateAimOffset_Pitch()
 			FVector2D OutRange(-90.0f, 0.0f);
 			AimOffset_Yaw = FMath::GetMappedRangeValueClamped(InRange, OutRange, AimOffset_Pitch);
 		}
+}
+
+void AMainCharacter::Destroy()
+{
+	Super::Destroy();
+	if (CombatComponent && CombatComponent->EquippedWeapon)
+	{
+		CombatComponent->EquippedWeapon->Destroy();
+	}
+
 }

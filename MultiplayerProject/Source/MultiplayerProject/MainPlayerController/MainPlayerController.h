@@ -7,6 +7,8 @@
 #include "MultiplayerProject/HUD/CharacterOverlay.h"
 #include "MainPlayerController.generated.h"
 
+
+
 /**
  * 
  */
@@ -34,6 +36,8 @@ public:
 	void OnMatchStateSet(FName State);
 
 	void HandleMatchHasStarted();//负责管理当MatchState变为start的所有变动
+	void HandleCooldown();
+
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 protected:
@@ -60,15 +64,19 @@ protected:
 	void ServerChenkMatchState();//客户端向服务端询问MatchState
 
 	UFUNCTION(Client,Reliable)
-	void ClientJoinMidGame(FName InMatchState, float InWarmupTime, float InMatchTime, float InLevelStartingTime);//客户端中途加入游戏，由服务器调用客户端上执行
+	void ClientJoinMidGame(FName InMatchState, float InWarmupTime, float InMatchTime, float InCooldownTime, float InLevelStartingTime);//客户端中途加入游戏，由服务器调用客户端上执行
 
 private:
 	UPROPERTY()
 	class AMainHUD* MainHUD;
 
+	UPROPERTY()
+	class AMainGameMode* MainGameMode;
+
 	float LevelStartingTime = 0.0f;//从服务器获取
 	float MatchTime = 0.0f;//从服务器获取
 	float WarmupTime = 0.0f;//从服务器获取
+	float CooldownTime = 0.0f;
 	uint32 CountDownInt = 0;
 
 	UPROPERTY(EditAnywhere)

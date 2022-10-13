@@ -11,6 +11,7 @@
 #include "MultiplayerProject/GameMode/MainGameMode.h"
 #include "MultiplayerProject/HUD/Announcement.h"
 #include "Kismet/GameplayStatics.h"
+#include "MultiplayerProject/Components_Pawn/CombatComponent.h"
 
 
 void AMainPlayerController::BeginPlay()
@@ -139,6 +140,11 @@ void AMainPlayerController::SetHUDMatchCountDown(float CountDownTime)
 	{
 		if (MainHUD->CharacterOverlay->MatchCountDownText)
 		{
+			if (CountDownTime < 0.0f)
+			{
+				MainHUD->CharacterOverlay->MatchCountDownText->SetText(FText());
+				return;
+			}
 			int32 Minutes = FMath::FloorToInt(CountDownTime / 60.0f);
 			int32 Seconds = CountDownTime - Minutes * 60;
 			FString TimeText = FString::Printf(TEXT("%02d : %02d"), Minutes, Seconds);
@@ -154,6 +160,11 @@ void AMainPlayerController::SetHUDAnnouncementCountDown(float CountDownTime)
 	{
 		if (MainHUD->Announcement->WarmupTime)
 		{
+			if (CountDownTime < 0.0f)
+			{
+				MainHUD->Announcement->WarmupTime->SetText(FText());
+				return;
+			}
 			int32 Minutes = FMath::FloorToInt(CountDownTime / 60.0f);
 			int32 Seconds = CountDownTime - Minutes * 60;
 			FString TimeText = FString::Printf(TEXT("%02d : %02d"), Minutes, Seconds);
@@ -166,13 +177,25 @@ void AMainPlayerController::SetHUDTime()
 {
 	float TimeLeft = 0.0f;
 	if (MatchState == MatchState::WaitingToStart) { TimeLeft = WarmupTime - GetServerTime() + LevelStartingTime; }
-	else if (MatchState == MatchState::InProgress) { WarmupTime + MatchTime - GetServerTime() + LevelStartingTime; }
+	else if (MatchState == MatchState::InProgress) { TimeLeft = WarmupTime + MatchTime - GetServerTime() + LevelStartingTime; }
+	else if (MatchState == MatchState::Cooldown) { TimeLeft =CooldownTime + WarmupTime + MatchTime - GetServerTime() + LevelStartingTime; }
 
 	uint32 SecondLeft = FMath::CeilToInt(TimeLeft);
 
+	if (HasAuthority())
+	{
+		//服务器上执行
+		MainGameMode = MainGameMode == nullptr ? Cast<AMainGameMode>(UGameplayStatics::GetGameMode(this)) : MainGameMode;
+		if (MainGameMode)
+		{
+			SecondLeft = FMath::CeilToInt(MainGameMode->GetCountdownTime() + LevelStartingTime);
+	    }
+	}
+
+
 	if (CountDownInt != SecondLeft)//转化成整数秒，秒数变化了才修改 HUD ， 实现秒修改 HUD 的效果
 	{
-		if (MatchState == MatchState::WaitingToStart)//在等待开始的倒计时模式
+		if (MatchState == MatchState::WaitingToStart || MatchState==MatchState::Cooldown)//在等待开始的倒计时模式
 		{
 			SetHUDAnnouncementCountDown(SecondLeft);
 		}
@@ -250,8 +273,9 @@ void AMainPlayerController::ServerChenkMatchState_Implementation()
 		WarmupTime = GameMode->WarmupTime;
 		MatchTime = GameMode->MatchTime;
 		LevelStartingTime = GameMode->LevelStartingTime;
+		CooldownTime = GameMode->CooldownTime;
 		MatchState = GameMode->GetMatchState();
-		ClientJoinMidGame(MatchState, WarmupTime, MatchTime, LevelStartingTime);
+		ClientJoinMidGame(MatchState, WarmupTime, MatchTime, CooldownTime, LevelStartingTime);//服务端发送给客户端ClientJoinMidGame_Implementation
 
 		if (MainHUD && MatchState == MatchState::WaitingToStart)
 		{
@@ -260,12 +284,13 @@ void AMainPlayerController::ServerChenkMatchState_Implementation()
 	}
 }
 
-void AMainPlayerController::ClientJoinMidGame_Implementation(FName InMatchState,float InWarmupTime,float InMatchTime,float InLevelStartingTime)
+void AMainPlayerController::ClientJoinMidGame_Implementation(FName InMatchState,float InWarmupTime,float InMatchTime, float InCooldownTime, float InLevelStartingTime)
 {
 	//本方法由服务端向客户端调用，用于处理客户端中途加入时的信息同步
 	WarmupTime = InWarmupTime;
 	MatchTime = InMatchTime;
 	LevelStartingTime = InLevelStartingTime;
+	CooldownTime = InCooldownTime;
 	MatchState = InMatchState;
 	OnMatchStateSet(MatchState);
 
@@ -286,25 +311,30 @@ void AMainPlayerController::CheckTimeSync(float DeltaTime)//检查是否需要更新时间
 	}
 }
 
-void AMainPlayerController::OnMatchStateSet(FName State)
+void AMainPlayerController::OnMatchStateSet(FName State)//
 {
+	//MatchState 变化后服务器处理
 	MatchState = State;
-	if (MatchState == MatchState::WaitingToStart)
-	{
-
-	}
-
 	if (MatchState == MatchState::InProgress)
 	{
 		HandleMatchHasStarted();
+	}
+	else if (MatchState == MatchState::Cooldown)
+	{
+		HandleCooldown();
 	}
 }
 
 void AMainPlayerController::OnRep_MatchState()
 {
+	//MatchState 变化后客户端处理
 	if (MatchState == MatchState::InProgress)
 	{
 		HandleMatchHasStarted();
+	}
+	else if (MatchState == MatchState::Cooldown)
+	{
+		HandleCooldown();
 	}
 }
 
@@ -318,5 +348,29 @@ void AMainPlayerController::HandleMatchHasStarted()
 		{
 			MainHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
 		}
+	}
+}
+
+void AMainPlayerController::HandleCooldown()
+{
+	MainHUD = MainHUD == nullptr ? Cast <AMainHUD>(GetHUD()) : MainHUD;
+	if (MainHUD)
+	{
+		MainHUD->CharacterOverlay->RemoveFromParent();
+		if (MainHUD->Announcement && MainHUD->Announcement->AnnouncementText && MainHUD->Announcement->InfoText)
+		{
+			//对局结束后，重新显示 Announcement
+			MainHUD->Announcement->SetVisibility(ESlateVisibility::Visible);
+			FString AnnouncementText("新对局即将开始：");
+			MainHUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
+			MainHUD->Announcement->InfoText->SetText(FText());
+
+		}
+	}
+	AMainCharacter* MainCharacter = Cast<AMainCharacter>(GetPawn());
+	if (MainCharacter&&MainCharacter->GetCombatComponent())
+	{
+		MainCharacter->bDisableGamePlay = true;
+		MainCharacter->GetCombatComponent()->FireButtonPressed(false);
 	}
 }

@@ -42,6 +42,11 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 	float ElimDelay = 3.0f;
 
+	UPROPERTY(Replicated)
+	bool bDisableGamePlay = false;//对局结束后禁用输入，只允许鼠标旋转摄像头
+
+	void FireButtonPressed();//需要在
+
 protected:
 
 	virtual void BeginPlay() override;
@@ -56,12 +61,13 @@ protected:
 	void AimButtonPressed();
 	void AimButtonReleased();
 	void AimOffset(float DeltaTime);
+	void RotateInPlace(float DeltaTime);
 
 	void CaculateAimOffset_Pitch();
 
 	void SimulateProxiesTurn();
 	virtual void Jump()override;
-	void FireButtonPressed();
+
 	void FireButtonReleased();
 	void PlayHitReactMontage();
 
@@ -167,10 +173,14 @@ public:
 	FORCEINLINE float GetHealth()const { return Health; }
 	FORCEINLINE float GetMaxHealth()const { return MaxHealth; }
 	FORCEINLINE ECombatState GetCombateState() const { return CombatComponent == nullptr ? ECombatState::ECS_MAX : CombatComponent->CombatState; }
+	FORCEINLINE UCombatComponent* GetCombatComponent()const { return CombatComponent; }
+	FORCEINLINE bool GetDisableGameplay()const { return bDisableGamePlay; }
 
 	AWeapon* GetEquippedWeapon();
 
 	FVector GetHitTarget()const;
+
+	void Destroy();
 
 };
 

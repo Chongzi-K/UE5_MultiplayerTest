@@ -8,6 +8,11 @@
 #include "GameFramework/PlayerStart.h"
 #include "MultiplayerProject/PlayerState/MainPlayerState.h"
 
+namespace MatchState
+{
+	const FName Cooldown = FName("Cooldown");
+}
+
 AMainGameMode::AMainGameMode()
 {
 	bDelayedStart = true;//游戏开始的时候会进入等待模式，会生成一个可自由飞行的 pawn 给玩家，直到服务器调用 start
@@ -30,6 +35,23 @@ void AMainGameMode::Tick(float DeltaTime)
 		if (CountDownTime <= 0.0f)
 		{
 			StartMatch();
+		}
+	}
+	else if (MatchState == MatchState::InProgress)
+	{
+		CountDownTime = WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		if (CountDownTime <= 0.0f)
+		{
+			SetMatchState(MatchState::Cooldown);
+		}
+	}
+	else if (MatchState == MatchState::Cooldown)
+	{
+		CountDownTime = CooldownTime + WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		if (CountDownTime < 0.0f)
+		{
+			//倒计时模式+倒计时结束=重启对局
+			RestartGame();//不会在客户端生效
 		}
 	}
 }
