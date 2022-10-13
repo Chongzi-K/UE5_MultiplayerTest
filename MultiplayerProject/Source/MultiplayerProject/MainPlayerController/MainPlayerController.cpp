@@ -345,7 +345,7 @@ void AMainPlayerController::HandleMatchHasStarted()
 	MainHUD = MainHUD == nullptr ? Cast <AMainHUD>(GetHUD()) : MainHUD;
 	if (MainHUD)
 	{
-		MainHUD->AddCharacterOverlay();
+		if (MainHUD->CharacterOverlay == nullptr) { MainHUD->AddCharacterOverlay(); }
 		if (MainHUD->Announcement)
 		{
 			MainHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);

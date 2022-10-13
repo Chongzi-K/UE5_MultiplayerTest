@@ -571,6 +571,7 @@ void AMainCharacter::MulticastElim_Implementation()
 		MainPlyerController->SetHUDWeaponAmmo(0);
 	}
 	bElimmed = true;
+	GetCharacterMovement()->DisableMovement();
 	PlayElimMontage();
 
 	//½ûÓÃ²Ù×÷
