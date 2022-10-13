@@ -180,7 +180,7 @@ public:
 
 	FVector GetHitTarget()const;
 
-	void Destroy();
+	virtual void Destroyed()override;
 
 };
 

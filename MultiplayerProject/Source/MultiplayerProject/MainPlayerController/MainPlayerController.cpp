@@ -12,6 +12,8 @@
 #include "MultiplayerProject/HUD/Announcement.h"
 #include "Kismet/GameplayStatics.h"
 #include "MultiplayerProject/Components_Pawn/CombatComponent.h"
+#include "MultiplayerProject/GameState/MainGameState.h"
+#include "MultiplayerProject/PlayerState/MainPlayerState.h"
 
 
 void AMainPlayerController::BeginPlay()
@@ -363,7 +365,37 @@ void AMainPlayerController::HandleCooldown()
 			MainHUD->Announcement->SetVisibility(ESlateVisibility::Visible);
 			FString AnnouncementText("新对局即将开始：");
 			MainHUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
-			MainHUD->Announcement->InfoText->SetText(FText());
+			
+			AMainGameState* MainGameState = Cast<AMainGameState>(UGameplayStatics::GetGameState(this));
+			AMainPlayerState* MainPlayerState = GetPlayerState<AMainPlayerState>();
+			if (MainGameState && MainPlayerState)
+			{
+				TArray<AMainPlayerState*> TopPlayers = MainGameState->PlayerWithTopScore;
+				FString InfoTextString;
+				if (TopPlayers.Num() == 0)
+				{
+					//沒有最高分
+					InfoTextString = FString("没有胜方");
+				}
+				else if (TopPlayers.Num() == 1 && TopPlayers[0] == MainPlayerState)
+				{
+					//最高分唯一而且是自己
+					InfoTextString = FString("你是胜方");
+				}
+				else if (TopPlayers.Num() == 1 && TopPlayers[0] != MainPlayerState)
+				{
+					InfoTextString = FString::Printf(TEXT("勝方是： %s"), *TopPlayers[0]->GetPlayerName());
+				}
+				else if (TopPlayers.Num() > 1)
+				{
+					InfoTextString = FString("勝方是：\n");
+					for (auto TiedPlayer : TopPlayers)
+					{
+						InfoTextString.Append(FString::Printf(TEXT("%s\n"), *TiedPlayer->GetPlayerName()));
+					}
+				}
+				MainHUD->Announcement->InfoText->SetText(FText::FromString(InfoTextString));
+			}
 
 		}
 	}

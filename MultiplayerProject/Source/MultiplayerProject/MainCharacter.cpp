@@ -18,6 +18,7 @@
 #include "TimerManager.h"
 #include "MultiplayerProject/PlayerState/MainPlayerState.h"
 #include "MultiplayerProject/Weapon/WeaponTypes.h"
+#include "Kismet/GameplayStatics.h"
 
 
 AMainCharacter::AMainCharacter()
@@ -572,12 +573,16 @@ void AMainCharacter::MulticastElim_Implementation()
 	bElimmed = true;
 	PlayElimMontage();
 
-	//禁用所有操作
+	//禁用操作
 	GetCharacterMovement()->DisableMovement();
 	GetCharacterMovement()->StopMovementImmediately();
 	
 	bDisableGamePlay = true;
-	//仍然需要保留部分操作
+	if (CombatComponent)
+	{
+		CombatComponent->FireButtonPressed(false);
+	}
+	/* 仍然需要保留部分操作，所以不用 DisableInput */
 	//if (MainPlyerController)
 	//{
 	//	DisableInput(MainPlyerController);
@@ -643,10 +648,14 @@ void AMainCharacter::CaculateAimOffset_Pitch()
 		}
 }
 
-void AMainCharacter::Destroy()
+void AMainCharacter::Destroyed()
 {
 	Super::Destroy();
-	if (CombatComponent && CombatComponent->EquippedWeapon)
+
+	AMainGameMode* MainGameMode = Cast<AMainGameMode>(UGameplayStatics::GetGameMode(this));
+	bool bMatchNotInProgress = MainGameMode && MainGameMode->GetMatchState() != MatchState::InProgress;
+
+	if (CombatComponent && CombatComponent->EquippedWeapon && bMatchNotInProgress)
 	{
 		CombatComponent->EquippedWeapon->Destroy();
 	}
