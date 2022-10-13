@@ -17,7 +17,6 @@
 
 
 
-#define TRACE_LENGTH 80000.0f
 
 UCombatComponent::UCombatComponent()
 {
@@ -197,7 +196,7 @@ void UCombatComponent::HandleReload()
 
 int32 UCombatComponent::AmountToReload()
 {
-	if (EquippedWeapon == nullptr) { return; }
+	if (EquippedWeapon == nullptr) { return 0; }
 	int32 RoomInMag = EquippedWeapon->GetMagCapacity() - EquippedWeapon->GetCurrentAmmo();
 	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))
 	{

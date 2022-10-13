@@ -24,13 +24,16 @@ public:
 	void SetHUDDefeat(int32 Defeat);
 	void SetHUDWeaponAmmo(int32 Ammo);
 	void SetHUDCarriedAmmo(int32 Ammo);
-	void SetHUDMatchCountDown(float CountDownTime);
+	void SetHUDMatchCountDown(float CountDownTime);//设置 HUD 中的游戏时间倒计时
+	void SetHUDAnnouncementCountDown(float CountDownTime);//设置 HUD 中 Announcement 的倒计时
 	virtual void OnPossess(APawn* InPawn)override;
 
 	virtual float GetServerTime();//同步服务器时间
 	virtual void ReceivedPlayer() override;//服务器接收玩家瞬间触发，在这里可以最快速进行时间同步减少误差
 
 	void OnMatchStateSet(FName State);
+
+	void HandleMatchHasStarted();//负责管理当MatchState变为start的所有变动
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 protected:
@@ -53,13 +56,19 @@ protected:
 
 	float ClientServerDelta = 0.0f;//客户端服务端之间的时间差
 
+	UFUNCTION(Server,Reliable)
+	void ServerChenkMatchState();//客户端向服务端询问MatchState
 
+	UFUNCTION(Client,Reliable)
+	void ClientJoinMidGame(FName InMatchState, float InWarmupTime, float InMatchTime, float InLevelStartingTime);//客户端中途加入游戏，由服务器调用客户端上执行
 
 private:
 	UPROPERTY()
 	class AMainHUD* MainHUD;
 
-	float MatchTime = 120.0f;
+	float LevelStartingTime = 0.0f;//从服务器获取
+	float MatchTime = 0.0f;//从服务器获取
+	float WarmupTime = 0.0f;//从服务器获取
 	uint32 CountDownInt = 0;
 
 	UPROPERTY(EditAnywhere)

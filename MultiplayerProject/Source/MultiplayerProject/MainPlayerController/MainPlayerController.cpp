@@ -9,6 +9,8 @@
 #include "MultiplayerProject/MainCharacter.h"
 #include "Net/UnrealNetwork.h"
 #include "MultiplayerProject/GameMode/MainGameMode.h"
+#include "MultiplayerProject/HUD/Announcement.h"
+#include "Kismet/GameplayStatics.h"
 
 
 void AMainPlayerController::BeginPlay()
@@ -16,6 +18,8 @@ void AMainPlayerController::BeginPlay()
 	Super::BeginPlay();
 
 	MainHUD = Cast<AMainHUD>(GetHUD());
+
+	ServerChenkMatchState();
 }
 
 void AMainPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -143,12 +147,39 @@ void AMainPlayerController::SetHUDMatchCountDown(float CountDownTime)
 	}
 }
 
+void AMainPlayerController::SetHUDAnnouncementCountDown(float CountDownTime)
+{
+	MainHUD = MainHUD == nullptr ? Cast<AMainHUD>(GetHUD()) : MainHUD;
+	if (MainHUD && MainHUD->CharacterOverlay)
+	{
+		if (MainHUD->Announcement->WarmupTime)
+		{
+			int32 Minutes = FMath::FloorToInt(CountDownTime / 60.0f);
+			int32 Seconds = CountDownTime - Minutes * 60;
+			FString TimeText = FString::Printf(TEXT("%02d : %02d"), Minutes, Seconds);
+			MainHUD->Announcement->WarmupTime->SetText(FText::FromString(TimeText));
+		}
+	}
+}
+
 void AMainPlayerController::SetHUDTime()
 {
-	uint32 SecondLeft = FMath::CeilToInt(MatchTime-GetServerTime());
+	float TimeLeft = 0.0f;
+	if (MatchState == MatchState::WaitingToStart) { TimeLeft = WarmupTime - GetServerTime() + LevelStartingTime; }
+	else if (MatchState == MatchState::InProgress) { WarmupTime + MatchTime - GetServerTime() + LevelStartingTime; }
+
+	uint32 SecondLeft = FMath::CeilToInt(TimeLeft);
+
 	if (CountDownInt != SecondLeft)//转化成整数秒，秒数变化了才修改 HUD ， 实现秒修改 HUD 的效果
 	{
-		SetHUDMatchCountDown(MatchTime - GetServerTime());
+		if (MatchState == MatchState::WaitingToStart)//在等待开始的倒计时模式
+		{
+			SetHUDAnnouncementCountDown(SecondLeft);
+		}
+		if (MatchState == MatchState::InProgress)//游戏中
+		{
+			SetHUDMatchCountDown(SecondLeft);
+		}
 	}
 	CountDownInt = SecondLeft;
 }
@@ -179,7 +210,7 @@ void AMainPlayerController::ServerRequestServerTime_Implementation(float TimeOfC
 	ClientReportServerTime(TimeOfClientRequest, ServerTimeOfReceipt);//客户端发送请求的时间，服务器收到请求的时间
 }
 
-void AMainPlayerController::ClientReportServerTime(float TimeOfClientRequest, float TimeOfServerReceivedClientRequest)
+void AMainPlayerController::ClientReportServerTime_Implementation(float TimeOfClientRequest, float TimeOfServerReceivedClientRequest)
 {
 	//在客户端计算服务端时间
 
@@ -211,6 +242,39 @@ void AMainPlayerController::ReceivedPlayer()
 	}
 }
 
+void AMainPlayerController::ServerChenkMatchState_Implementation()
+{
+	AMainGameMode* GameMode = Cast<AMainGameMode>(UGameplayStatics::GetGameMode(this));//只有在服务端才能获取 GameMode ,客户端调用只会返回 nullptr
+	if (GameMode)
+	{
+		WarmupTime = GameMode->WarmupTime;
+		MatchTime = GameMode->MatchTime;
+		LevelStartingTime = GameMode->LevelStartingTime;
+		MatchState = GameMode->GetMatchState();
+		ClientJoinMidGame(MatchState, WarmupTime, MatchTime, LevelStartingTime);
+
+		if (MainHUD && MatchState == MatchState::WaitingToStart)
+		{
+			MainHUD->AddAnnouncement();
+		}
+	}
+}
+
+void AMainPlayerController::ClientJoinMidGame_Implementation(FName InMatchState,float InWarmupTime,float InMatchTime,float InLevelStartingTime)
+{
+	//本方法由服务端向客户端调用，用于处理客户端中途加入时的信息同步
+	WarmupTime = InWarmupTime;
+	MatchTime = InMatchTime;
+	LevelStartingTime = InLevelStartingTime;
+	MatchState = InMatchState;
+	OnMatchStateSet(MatchState);
+
+	if (MainHUD && MatchState == MatchState::WaitingToStart)
+	{
+		MainHUD->AddAnnouncement();
+	}
+}
+
 void AMainPlayerController::CheckTimeSync(float DeltaTime)//检查是否需要更新时间
 {
 	TimeSyncRunningTime += DeltaTime;
@@ -225,13 +289,14 @@ void AMainPlayerController::CheckTimeSync(float DeltaTime)//检查是否需要更新时间
 void AMainPlayerController::OnMatchStateSet(FName State)
 {
 	MatchState = State;
+	if (MatchState == MatchState::WaitingToStart)
+	{
+
+	}
+
 	if (MatchState == MatchState::InProgress)
 	{
-		MainHUD = MainHUD == nullptr ? Cast <AMainHUD>(GetHUD()) : MainHUD;
-		if (MainHUD)
-		{
-			MainHUD->AddCharacterOverlay();
-		}
+		HandleMatchHasStarted();
 	}
 }
 
@@ -239,10 +304,19 @@ void AMainPlayerController::OnRep_MatchState()
 {
 	if (MatchState == MatchState::InProgress)
 	{
-		MainHUD = MainHUD == nullptr ? Cast <AMainHUD>(GetHUD()) : MainHUD;
-		if (MainHUD)
+		HandleMatchHasStarted();
+	}
+}
+
+void AMainPlayerController::HandleMatchHasStarted()
+{
+	MainHUD = MainHUD == nullptr ? Cast <AMainHUD>(GetHUD()) : MainHUD;
+	if (MainHUD)
+	{
+		MainHUD->AddCharacterOverlay();
+		if (MainHUD->Announcement)
 		{
-			MainHUD->AddCharacterOverlay();
+			MainHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
 }

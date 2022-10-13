@@ -25,7 +25,10 @@ public:
 	virtual void RequestRespawn(ACharacter* ElimmedCharacter,AController* ElimmedController);
 
 	UPROPERTY(EditDefaultsOnly)
-		float WarmupTime = 10.0f;//等待模式的持续时间
+	float WarmupTime = 10.0f;//等待模式的持续时间
+
+	UPROPERTY(EditDefaultsOnly)
+	float MatchTime = 120.0f;//一场比赛的时间
 
 	float LevelStartingTime = 0.0f;//进入游戏地图开始计时
 
