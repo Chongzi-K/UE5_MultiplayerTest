@@ -17,12 +17,38 @@ class MULTIPLAYERPROJECT_API AProjectile_Rocket : public AProjectile
 public:
 	AProjectile_Rocket();
 
+	virtual void Destroyed()override;
+
 protected:
 
 	UFUNCTION()
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)override;
 
+	virtual void BeginPlay()override;
+
+	UPROPERTY(EditAnywhere)
+	class UNiagaraSystem* RocketTrailSystem;
+
+	UPROPERTY()
+	class UNiagaraComponent* RocketTrailSystemComponent;
+
+	void DestroyRocketTrailWhenTimerFinished();
+
+	UPROPERTY(EditAnywhere)
+	USoundCue* ProjectileFlyingLoop;
+
+	UPROPERTY()
+	UAudioComponent* ProjectileFlyingLoopAudioComponent;
+
+	UPROPERTY(EditAnywhere)
+	USoundAttenuation* LoopingSoundAttenuation;//“Ù¡øÀ•ºı
+
 private:
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* RocketMesh;
+
+	FTimerHandle DestroyRocketTrailHandle;
+
+	UPROPERTY(EditAnywhere)
+	float DestroyTime = 3.0f;
 };
