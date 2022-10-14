@@ -15,7 +15,7 @@ class MULTIPLAYERPROJECT_API AProjectile_Bullet : public AProjectile
 	GENERATED_BODY()
 public:
 
-
+	AProjectile_Bullet();
 protected:
 
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)override;

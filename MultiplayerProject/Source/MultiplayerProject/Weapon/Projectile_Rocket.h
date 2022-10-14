@@ -21,7 +21,7 @@ public:
 
 protected:
 
-	UFUNCTION()
+	
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)override;
 
 	virtual void BeginPlay()override;
@@ -42,6 +42,9 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	USoundAttenuation* LoopingSoundAttenuation;//“Ù¡øÀ•ºı
+
+	UPROPERTY(VisibleAnywhere)
+	class URocket_MovementComponent* RocketMovementComponent;
 
 private:
 	UPROPERTY(VisibleAnywhere)
