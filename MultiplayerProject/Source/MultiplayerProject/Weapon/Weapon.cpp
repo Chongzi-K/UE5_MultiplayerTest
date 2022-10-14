@@ -17,6 +17,7 @@ AWeapon::AWeapon()
 { 
 	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;//开启复制
+	SetReplicateMovement(true);//运动也复制，修复玩家在空中死亡时武器掉落位置各端显示不统一的问题
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	SetRootComponent(WeaponMesh);

@@ -15,8 +15,7 @@ class MULTIPLAYERPROJECT_API URocket_MovementComponent : public UProjectileMovem
 	GENERATED_BODY()
 
 protected:
-	EHandleBlockingHitResult HandleBlockingHit(const FHitResult& Hit, float TimeTick, const FVector& MoveDelta, float& SubTickTimeRemaining)override;
-
-	virtual void HandleImpact(const FHitResult& Hit, float TimeSlice, const FVector& MoveDelta = FVector::ZeroVector) override;
+	virtual EHandleBlockingHitResult HandleBlockingHit(const FHitResult& Hit, float TimeTick, const FVector& MoveDelta, float& SubTickTimeRemaining) override;
+	virtual void HandleImpact(const FHitResult& Hit, float TimeSlice = 0.f, const FVector& MoveDelta = FVector::ZeroVector) override;
 	
 };
