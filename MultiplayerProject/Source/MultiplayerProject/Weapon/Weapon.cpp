@@ -21,9 +21,14 @@ AWeapon::AWeapon()
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	SetRootComponent(WeaponMesh);
+
+	//WeaponMesh->SetSimulatePhysics(true);
+	//WeaponMesh->SetEnableGravity(true);
 	WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);//对所有通道碰撞
 	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);//忽略pawn通道
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);//禁用Mesh的碰撞
+
+
 
 	AreaSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AreaSphere"));
 	AreaSphere->SetupAttachment(RootComponent);
@@ -160,6 +165,12 @@ void AWeapon::SetWeaponState(EWeaponState StateToSet)
 		WeaponMesh->SetSimulatePhysics(false);
 		WeaponMesh->SetEnableGravity(false);
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		if (WeaponType == EWeaponType::EWT_SubmachineGun)
+		{
+			WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+			WeaponMesh->SetEnableGravity(true);
+			WeaponMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
+		}
 		break;
 
 	case EWeaponState::EWS_Dropped:
@@ -170,6 +181,8 @@ void AWeapon::SetWeaponState(EWeaponState StateToSet)
 		WeaponMesh->SetSimulatePhysics(true);
 		WeaponMesh->SetEnableGravity(true);
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+		WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 		break;
 	}
 }

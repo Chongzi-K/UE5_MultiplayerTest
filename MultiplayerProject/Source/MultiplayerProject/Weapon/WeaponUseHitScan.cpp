@@ -7,6 +7,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 
+
 void AWeaponUseHitScan::Fire(const FVector& HitTarget)
 {
 	Super::Fire(HitTarget);
@@ -14,8 +15,9 @@ void AWeaponUseHitScan::Fire(const FVector& HitTarget)
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
 	if (OwnerPawn == nullptr) { return; }//获取不到所有者时直接无效
 	
-	AController* InstigatorController = OwnerPawn->GetController();/*不用 Cast ，节省性能*/
-	//InstigatorController 在 Simulate 实例 上都为 nullptr
+	AController* InstigatorController = OwnerPawn->GetController();
+	//不用 Cast ，节省性能
+	//Controller 在 Simulate 实例 上都为 nullptr
 
 
 	const USkeletalMeshSocket* MuzzleFlashScoket = GetWeaponMesh()->GetSocketByName("MuzzleFlashSocket");
@@ -38,6 +40,7 @@ void AWeaponUseHitScan::Fire(const FVector& HitTarget)
 
 			FVector BeamEnd = ScaleEndPoint;//预先设置子弹尾迹终点为射箭检测终点
 
+			//命中玩家
 			if (FireHit.bBlockingHit)
 			{
 				BeamEnd = FireHit.ImpactPoint;//如果检测成功，则子弹尾迹终点为检测点
@@ -62,7 +65,9 @@ void AWeaponUseHitScan::Fire(const FVector& HitTarget)
 					);
 				}
 			}
-			if (BeamParticles)//绘制子弹尾迹
+
+			//绘制子弹尾迹
+			if (BeamParticles)
 			{
 				UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(
 					World,
@@ -74,6 +79,23 @@ void AWeaponUseHitScan::Fire(const FVector& HitTarget)
 					Beam->SetVectorParameter(FName("Target"), BeamEnd);
 				}
 			}
+
+			//播放命中声音
+			if (HitSound)
+			{
+				UGameplayStatics::PlaySoundAtLocation(this, HitSound, FireHit.ImpactPoint);
+			}
 		}
+
+		//枪口闪光
+		if (MuzzleFlash)
+		{
+			UGameplayStatics::SpawnEmitterAtLocation(World, MuzzleFlash, MuzzleFlashSocketFransform);
+		}
+		if (FireSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+		}
+
 	}
 }

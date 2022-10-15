@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Weapon.h"
+#include "Sound/SoundCue.h"
 #include "WeaponUseHitScan.generated.h"
 
 /**
@@ -13,10 +14,10 @@ UCLASS()
 class MULTIPLAYERPROJECT_API AWeaponUseHitScan : public AWeapon
 {
 	GENERATED_BODY()
-public:
-	virtual void Fire(const FVector& HitTarget)override;
 
-protected:
+public:
+
+	virtual void Fire(const FVector& HitTarget)override;
 
 private:
 
@@ -28,5 +29,14 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* BeamParticles;//射线检测产生的粒子效果，用作子弹尾迹
+
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* MuzzleFlash;
+
+	UPROPERTY(EditAnywhere)
+		USoundCue* FireSound;
+
+	UPROPERTY(EditAnywhere)
+		USoundCue* HitSound;
 
 };
