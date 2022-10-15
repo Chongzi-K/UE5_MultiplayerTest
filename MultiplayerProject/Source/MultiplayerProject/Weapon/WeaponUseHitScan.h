@@ -26,4 +26,7 @@ private:
 	UPROPERTY(EditAnywhere)
 	class UParticleSystem* ImpactParticleSystem;
 
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* BeamParticles;//射线检测产生的粒子效果，用作子弹尾迹
+
 };

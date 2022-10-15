@@ -5,6 +5,7 @@
 #include "Engine/SkeletalMeshSocket.h"
 #include "MultiplayerProject/MainCharacter.h"
 #include "Kismet/GameplayStatics.h"
+#include "Particles/ParticleSystemComponent.h"
 
 void AWeaponUseHitScan::Fire(const FVector& HitTarget)
 {
@@ -12,10 +13,13 @@ void AWeaponUseHitScan::Fire(const FVector& HitTarget)
 
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
 	if (OwnerPawn == nullptr) { return; }//获取不到所有者时直接无效
+	
 	AController* InstigatorController = OwnerPawn->GetController();/*不用 Cast ，节省性能*/
+	//InstigatorController 在 Simulate 实例 上都为 nullptr
+
 
 	const USkeletalMeshSocket* MuzzleFlashScoket = GetWeaponMesh()->GetSocketByName("MuzzleFlashSocket");
-	if (MuzzleFlashScoket && InstigatorController)
+	if (MuzzleFlashScoket)
 	{
 		FTransform MuzzleFlashSocketFransform = MuzzleFlashScoket->GetSocketTransform(GetWeaponMesh());
 		FVector ScaleStartPoint = MuzzleFlashSocketFransform.GetLocation();
@@ -31,21 +35,22 @@ void AWeaponUseHitScan::Fire(const FVector& HitTarget)
 				ScaleEndPoint,
 				ECollisionChannel::ECC_Visibility
 			);
+
+			FVector BeamEnd = ScaleEndPoint;//预先设置子弹尾迹终点为射箭检测终点
+
 			if (FireHit.bBlockingHit)
 			{
+				BeamEnd = FireHit.ImpactPoint;//如果检测成功，则子弹尾迹终点为检测点
 				AMainCharacter* MainCharacter = Cast<AMainCharacter>(FireHit.GetActor());
-				if (MainCharacter)
+				if (MainCharacter && HasAuthority() &&InstigatorController)
 				{
-					if (HasAuthority())//服务端才被允许申请伤害
-					{
-						UGameplayStatics::ApplyDamage(
-							MainCharacter,
-							Damage,
-							InstigatorController,
-							this,
-							UDamageType::StaticClass()
-						);
-                    }
+					UGameplayStatics::ApplyDamage(
+						MainCharacter,
+						Damage,
+						InstigatorController,
+						this,
+						UDamageType::StaticClass()
+					);
 				}
 				if (ImpactParticleSystem)
 				{
@@ -55,6 +60,18 @@ void AWeaponUseHitScan::Fire(const FVector& HitTarget)
 						FireHit.ImpactPoint,
 						FireHit.ImpactNormal.Rotation()
 					);
+				}
+			}
+			if (BeamParticles)//绘制子弹尾迹
+			{
+				UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(
+					World,
+					BeamParticles,
+					MuzzleFlashSocketFransform
+				);
+				if (Beam)
+				{
+					Beam->SetVectorParameter(FName("Target"), BeamEnd);
 				}
 			}
 		}
