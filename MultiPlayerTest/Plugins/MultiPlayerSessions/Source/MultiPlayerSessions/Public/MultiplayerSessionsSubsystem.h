@@ -10,9 +10,10 @@
 
 
 //
-//为了 Menu 声明 delegate 用于绑定回调函数
-// 因为是 Dynamic ，所以绑定的回调函数都需要是 UFUNCTION
-// 注意DYNAMIC参数的逗号
+// 为了 Menu 声明自己的委托类型，定义参数列表（构建一个委托类），参数会被传递到接受广播的类中
+//  Dynamic 委托，绑定的回调函数都需要是 UFUNCTION
+// 注意DYNAMIC参数与类型之间的逗号
+// 使用代理， 联网子系统 无需包含使用委托的头文件，不需要知道是谁接收了消息，实现观察者模式，解耦
 //
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerOnCreateSessionComplete, bool, bWasSuccessful);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FMultiplayerOnFindSessionsComplete, const TArray<FOnlineSessionSearchResult>& SessionResult, bool bWasSeccessful);
@@ -33,7 +34,7 @@ public:
 	UMultiplayerSessionsSubsystem();
 
 	//
-	//To handle session functionality. The class will call these
+	//处理会话的函数
 	//
 	void CreateSession(int32 NumPublicConnections,FString MatchType);
 	void FindSessions(int32 MaxSearchResults);
@@ -42,7 +43,7 @@ public:
 	void StartSession();
 
 	//
-	// 为了 Menu 声明 delegate 用于绑定回调函数
+	// 在类中定义委托变量 
 	//
 	FMultiplayerOnCreateSessionComplete MultiplayerOnCreateSessionComplete;
 	FMultiplayerOnFindSessionsComplete MultiplayerOnFindSessionsComplete;
@@ -55,8 +56,8 @@ public:
 protected:
 
 	//
-	//Internal callbacks for the delegates
-	// Don't need to be call outside this class
+	// 在类中声明委托回调函数，并在cpp中定义
+	// 类内的委托回调函数
 	//
 	void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
 	void OnFindSessionsComplete(bool bWasSuccessful);
@@ -70,8 +71,9 @@ private:
 	TSharedPtr<FOnlineSessionSearch> LastSessionSearch;
 
 	//
-	//To add the Online Session Interface delegate list
-	//bind subsystem internal callbacks to these
+	//在类中定义委托变量和委托句柄（steam的委托接口）
+	//允许以后把委托添加到委托表中
+	//子系统内部回调函数绑定到这些代理
 	//
 	FOnCreateSessionCompleteDelegate CreateSessionCompleteDelegate;
 	FDelegateHandle CreateSessionCompleteDelegateHandle;
@@ -89,6 +91,7 @@ private:
 	FDelegateHandle StartSessionCompleteDelegateHandle;
 
 	bool bCreateSessionOnDestroy{ false };//销毁会话时检查此变量与回调函数，如果真，则可以再次创建会话
+
 	int32 LastNumPublicConnections;
 	FString LastMatchType;
 	

@@ -18,23 +18,26 @@ class MULTIPLAYERSESSIONS_API UMenu : public UUserWidget
 public:
 
 	UFUNCTION(BlueprintCallable)
-		void MenuSetup(int32 NumberOfPublicConnections = 4, FString TypeOfMatch = FString(TEXT("FreeForAll")),FString LobbyPath=FString(TEXT("Game/Map/Lobby ")));
+	void MenuSetup(int32 NumberOfPublicConnections = 4, FString TypeOfMatch = FString(TEXT("FreeForAll")),FString LobbyPath=FString(TEXT("Game/Map/Lobby ")));
 
 protected:
 
 	virtual bool Initialize() override;
 
-	//auto called when level removed from world 
+	//当前关卡被切换时自动调用，参数是当前关卡和当前世界
 	virtual void OnLevelRemovedFromWorld(ULevel* InLevel, UWorld* InWorld) override;
 
 	//
 	//用于 MultiplayerSessionSubsysten 中自定义委托的回调函数
+	// 动态传播需要用UFUNCTION()宏，不是动态的可以不需要
 	//
 	UFUNCTION()
 	void OnCreateSession(bool bWasSuccessful);
 
+	UFUNCTION()
 	void OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResult, bool bWasSeccessful);
     
+	UFUNCTION()
 	void OnJoinSession(EOnJoinSessionCompleteResult::Type Result);
 	
 	UFUNCTION()
@@ -60,7 +63,7 @@ private:
 
 	void MenuTearDown();
 
-	//subsystem to handle all online session  functionality
+	//负责管理所有在线会话的子系统
 	class UMultiplayerSessionsSubsystem* MultiplayerSessionsSubsystem;
 
 	int32 NumPublicConnections{4};
